@@ -1,0 +1,244 @@
+<nav class="navbar navbar-expand-lg" style="background-color: #de7b3b;">
+  <div class="container-fluid">
+
+    <span class="navbar-brand text-white fw-bold fs-4">Sonelgaz</span>
+
+    <div class="collapse navbar-collapse">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link text-white" [routerLink]="getDashboardLink()" routerLinkActive="active-link">Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-white" routerLink="/demandes" routerLinkActive="active-link">Demandes</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-white" routerLink="/historique" routerLinkActive="active-link">Historique</a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Icône Profil -->
+    <div class="position-relative ms-3">
+      <div class="rounded-circle overflow-hidden"
+           style="width:42px;height:42px;cursor:pointer;border:2px solid white;"
+           (click)="toggleProfil()">
+        <img [src]="photoUrl" style="width:100%;height:100%;object-fit:cover;"/>
+      </div>
+
+      <!-- Dropdown -->
+      <div *ngIf="showProfil"
+           class="position-absolute end-0 bg-white rounded shadow"
+           style="min-width:300px;z-index:9999;top:50px;">
+
+        <!-- MENU PRINCIPAL -->
+        <div *ngIf="activeMenu === 'main'">
+          <div class="p-3 d-flex align-items-center gap-2"
+               style="border-bottom:2px solid #de7b3b;">
+            <div class="rounded-circle overflow-hidden"
+                 style="width:45px;height:45px;border:2px solid #de7b3b;">
+              <img [src]="photoUrl" style="width:100%;height:100%;object-fit:cover;"/>
+            </div>
+            <div>
+              <div class="fw-bold">{{ employe.prenomUtil }} {{ employe.nomUtil }}</div>
+              <div class="text-muted" style="font-size:12px;">{{ employe.emailUtil }}</div>
+            </div>
+          </div>
+
+          <div class="p-2">
+            <div class="dropdown-item rounded p-2 d-flex align-items-center gap-2"
+                 style="cursor:pointer;" (click)="activeMenu = 'infos'">
+              <span>👤</span>
+              <span>Informations personnelles</span>
+              <span class="ms-auto">›</span>
+            </div>
+            <div class="dropdown-item rounded p-2 d-flex align-items-center gap-2"
+                 style="cursor:pointer;" (click)="activeMenu = 'parametres'">
+              <span>⚙️</span>
+              <span>Paramètres</span>
+              <span class="ms-auto">›</span>
+            </div>
+            <hr class="my-1"/>
+            <div class="dropdown-item rounded p-2 d-flex align-items-center gap-2 text-danger"
+                 style="cursor:pointer;" (click)="logout()">
+              <span>🚪</span>
+              <span>Déconnexion</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- INFORMATIONS PERSONNELLES -->
+        <div *ngIf="activeMenu === 'infos'">
+          <div class="p-3 d-flex align-items-center gap-2"
+               style="border-bottom:2px solid #de7b3b;">
+            <span style="cursor:pointer;font-size:20px;font-weight:bold;"
+                  (click)="activeMenu = 'main'">‹</span>
+            <span class="fw-bold">Informations personnelles</span>
+          </div>
+
+          <div class="p-3" style="max-height:70vh;overflow-y:auto;">
+
+            <!-- Photo actuelle -->
+            <div class="text-center mb-3">
+              <div class="rounded-circle overflow-hidden mx-auto mb-2"
+                   style="width:75px;height:75px;border:3px solid #de7b3b;">
+                <img [src]="photoUrl" style="width:100%;height:100%;object-fit:cover;"/>
+              </div>
+            </div>
+
+            <!-- Choisir depuis PC -->
+            <div class="mb-3">
+              <label style="font-size:12px;font-weight:600;">📁 Choisir depuis mon PC</label>
+              <input type="file" class="form-control form-control-sm mt-1"
+                     accept="image/*" (change)="onPhotoChange($event)"/>
+            </div>
+
+            <!-- Avatars suggérés -->
+            <div class="mb-3">
+              <label style="font-size:12px;font-weight:600;">🎨 Avatars suggérés</label>
+              <div class="d-flex gap-2 mt-2 justify-content-center flex-wrap">
+                <img *ngFor="let avatar of avatarSuggestions"
+                     [src]="avatar.url"
+                     [title]="avatar.label"
+                     (click)="selectAvatar(avatar.url)"
+                     [style.border]="photoUrl === avatar.url ? '3px solid #de7b3b' : '3px solid #eee'"
+                     style="width:48px;height:48px;border-radius:50%;cursor:pointer;
+                            object-fit:cover;background:#f5f5f5;padding:4px;
+                            transition:border 0.2s;"/>
+              </div>
+            </div>
+
+            <!-- Champs communs -->
+            <div class="mb-1">
+              <input type="text" class="form-control form-control-sm mb-2"
+                     placeholder="Nom" [(ngModel)]="employe.nomUtil"/>
+              <input type="text" class="form-control form-control-sm mb-2"
+                     placeholder="Prénom" [(ngModel)]="employe.prenomUtil"/>
+              <input type="email" class="form-control form-control-sm mb-2"
+                     placeholder="Email" [(ngModel)]="employe.emailUtil"/>
+              <input type="text" class="form-control form-control-sm mb-2"
+                     placeholder="Téléphone" [(ngModel)]="employe.numTel"/>
+            </div>
+
+            <!-- Champs Employé / Admin / Responsable -->
+            <ng-container *ngIf="role === 'EMPLOYE' || role === 'ADMIN' || role === 'RESPONSABLE'">
+              <div style="font-size:12px;font-weight:600;color:#de7b3b;margin-bottom:6px;">
+                👷 Informations Employé
+              </div>
+              <input type="text" class="form-control form-control-sm mb-2"
+                     placeholder="Matricule"
+                     [ngModel]="employe.matricule"
+                     disabled style="background:#f5f5f5;"/>
+              <input type="text" class="form-control form-control-sm mb-2"
+                     placeholder="Département"
+                     [ngModel]="employe.departement?.nomDepartement"
+                     disabled style="background:#f5f5f5;"/>
+              <input type="text" class="form-control form-control-sm mb-2"
+                     placeholder="Date embauche"
+                     [ngModel]="employe.dateEmbauche"
+                     disabled style="background:#f5f5f5;"/>
+            </ng-container>
+
+            <!-- Champs Client -->
+            <ng-container *ngIf="role === 'CLIENT'">
+              <div style="font-size:12px;font-weight:600;color:#de7b3b;margin-bottom:6px;">
+                👤 Informations Client
+              </div>
+              <input type="text" class="form-control form-control-sm mb-2"
+                     placeholder="Adresse" [(ngModel)]="employe.adresseClient"/>
+              <input type="number" class="form-control form-control-sm mb-2"
+                     placeholder="Code postal" [(ngModel)]="employe.codePostal"/>
+              <input type="text" class="form-control form-control-sm mb-2"
+                     placeholder="Type client"
+                     [ngModel]="employe.typeClient"
+                     disabled style="background:#f5f5f5;"/>
+            </ng-container>
+
+            <button class="btn btn-sm w-100 text-white mt-2"
+                    style="background-color:#de7b3b;"
+                    (click)="saveInfos()">
+              💾 Enregistrer
+            </button>
+
+          </div>
+        </div>
+
+        <!-- PARAMÈTRES -->
+        <div *ngIf="activeMenu === 'parametres'">
+          <div class="p-3 d-flex align-items-center gap-2"
+               style="border-bottom:2px solid #de7b3b;">
+            <span style="cursor:pointer;font-size:20px;font-weight:bold;"
+                  (click)="activeMenu = 'main'">‹</span>
+            <span class="fw-bold">Paramètres</span>
+          </div>
+
+          <div class="p-3">
+
+            <!-- Langue -->
+            <div class="mb-3">
+              <label style="font-size:12px;font-weight:600;">🌐 Langue</label>
+              <select class="form-select form-select-sm mt-1" [(ngModel)]="selectedLangue">
+                <option value="fr">🇫🇷 Français</option>
+                <option value="en">🇬🇧 Anglais</option>
+                <option value="ar">🇩🇿 Arabe</option>
+              </select>
+            </div>
+
+            <!-- Modifier mot de passe -->
+            <div class="mb-3">
+              <label style="font-size:12px;font-weight:600;">🔒 Modifier mot de passe</label>
+              <div *ngIf="!showPasswordForm" class="mt-1">
+                <button class="btn btn-sm w-100"
+                        style="background:#f0f0f0;font-size:12px;"
+                        (click)="showPasswordForm = true">
+                  Modifier mot de passe
+                </button>
+              </div>
+              <div *ngIf="showPasswordForm" class="mt-1">
+                <input type="password" class="form-control form-control-sm mb-1"
+                       placeholder="Ancien mot de passe" [(ngModel)]="passwords.ancien"/>
+                <input type="password" class="form-control form-control-sm mb-1"
+                       placeholder="Nouveau mot de passe" [(ngModel)]="passwords.nouveau"/>
+                <input type="password" class="form-control form-control-sm mb-1"
+                       placeholder="Confirmer mot de passe" [(ngModel)]="passwords.confirmer"/>
+                <div class="d-flex gap-1 mt-1">
+                  <button class="btn btn-sm text-white w-50"
+                          style="background-color:#de7b3b;font-size:12px;"
+                          (click)="updatePassword()">
+                    Enregistrer
+                  </button>
+                  <button class="btn btn-sm btn-secondary w-50"
+                          style="font-size:12px;"
+                          (click)="showPasswordForm = false">
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Activer / Désactiver compte -->
+            <div class="d-flex align-items-center justify-content-between p-2 rounded"
+                 style="background:#f8f8f8;">
+              <div>
+                <div style="font-size:13px;font-weight:600;">
+                  {{ compteActif ? '🟢 Compte actif' : '🔴 Compte désactivé' }}
+                </div>
+                <div class="text-muted" style="font-size:11px;">
+                  {{ compteActif ? 'Votre compte est visible' : 'Votre compte est désactivé' }}
+                </div>
+              </div>
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox"
+                       [(ngModel)]="compteActif"
+                       (change)="toggleCompte()"
+                       style="cursor:pointer;width:40px;height:20px;">
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</nav>

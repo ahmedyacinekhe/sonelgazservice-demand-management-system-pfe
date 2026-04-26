@@ -1,0 +1,99 @@
+<app-navbar></app-navbar>
+
+<div class="container mt-4">
+  <h4 class="fw-bold mb-4">📁 Historique des Demandes</h4>
+
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <a class="nav-link" [class.active]="activeTab === 'en_cours'"
+         (click)="activeTab = 'en_cours'" style="cursor:pointer;">
+        🕐 En cours
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" [class.active]="activeTab === 'traite'"
+         (click)="activeTab = 'traite'" style="cursor:pointer;">
+        ✅ Traitées
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" [class.active]="activeTab === 'rejete'"
+         (click)="activeTab = 'rejete'" style="cursor:pointer;">
+        ❌ Rejetées
+      </a>
+    </li>
+  </ul>
+
+  <!-- Tableau commun -->
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover">
+      <thead style="background-color: #de7b3b; color: white;">
+        <tr>
+          <th>ID</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Date</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let d of getDemandes()">
+          <td>{{ d.idDemande }}</td>
+          <td>{{ d.type }}</td>
+          <td>{{ d.description }}</td>
+          <td>{{ d.dateDemande }}</td>
+          <td>
+            <span class="badge"
+              [ngClass]="{
+                'bg-warning text-dark': activeTab === 'en_cours',
+                'bg-success': activeTab === 'traite',
+                'bg-danger': activeTab === 'rejete'
+              }">
+              {{ activeTab === 'en_cours' ? 'EN COURS' : activeTab === 'traite' ? 'TRAITÉ' : 'REJETÉ' }}
+            </span>
+          </td>
+          <td>
+            <!-- Modifier/Supprimer seulement pour EN COURS -->
+            <button class="btn btn-sm btn-warning me-1" *ngIf="activeTab === 'en_cours'" (click)="modifier(d)">
+              Modifier
+            </button>
+            <button class="btn btn-sm btn-danger me-1" *ngIf="activeTab === 'en_cours'" (click)="supprimer(d.idDemande)">
+              Supprimer
+            </button>
+            <!-- Info disponible pour tous -->
+            <button class="btn btn-sm btn-info text-white" (click)="voirInfo(d)">
+              Info
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="getDemandes().length === 0">
+          <td colspan="6" class="text-center text-muted">Aucune demande</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Info -->
+  <div class="modal fade show d-block" *ngIf="selectedDemande" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header" style="background-color: #de7b3b;">
+          <h5 class="modal-title text-white">Détails de la demande</h5>
+          <button class="btn-close" (click)="selectedDemande = null"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>ID :</strong> {{ selectedDemande.idDemande }}</p>
+          <p><strong>Type :</strong> {{ selectedDemande.type }}</p>
+          <p><strong>Description :</strong> {{ selectedDemande.description }}</p>
+          <p><strong>Date :</strong> {{ selectedDemande.dateDemande }}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="selectedDemande = null">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,98 @@
+<app-navbar></app-navbar>
+
+<div class="container mt-4">
+  <h4 class="fw-bold mb-4">👤 Mon Profil</h4>
+
+  <div class="row">
+
+    <!-- Photo de profil -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow p-3 text-center">
+        <div class="card-body">
+          <img 
+            [src]="photoUrl" 
+            alt="Photo de profil"
+            style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #de7b3b;"
+          />
+          <h5 class="fw-bold mt-3">{{ employe.prenomUtil }} {{ employe.nomUtil }}</h5>
+          <p class="text-muted">{{ employe.emailUtil }}</p>
+          
+          <input type="file" class="form-control mt-2" (change)="onPhotoChange($event)" accept="image/*"/>
+          <button class="btn w-100 text-white mt-2" style="background-color: #de7b3b;" (click)="savePhoto()">
+                 Enregistrer la photo
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Informations personnelles -->
+    <div class="col-md-8 mb-3">
+      <div class="card shadow p-3">
+        <div class="card-body">
+          <h5 class="fw-bold mb-3" style="color: #de7b3b;">Informations personnelles</h5>
+
+          <div class="row">
+            <div class="col-md-6 mb-2">
+              <label class="form-label">Nom</label>
+              <input type="text" class="form-control" [(ngModel)]="employe.nomUtil"/>
+            </div>
+            <div class="col-md-6 mb-2">
+              <label class="form-label">Prénom</label>
+              <input type="text" class="form-control" [(ngModel)]="employe.prenomUtil"/>
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" [(ngModel)]="employe.emailUtil"/>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Téléphone</label>
+            <input type="text" class="form-control" [(ngModel)]="employe.numTel"/>
+          </div>
+
+          <button class="btn w-100 text-white mt-2" style="background-color: #de7b3b;" (click)="updateProfil()">
+            Modifier informations
+          </button>
+        </div>
+      </div>
+
+      <!-- Modifier mot de passe -->
+      <div class="card shadow p-3 mt-3">
+        <div class="card-body">
+          <h5 class="fw-bold mb-3" style="color: #de7b3b;">Modifier mot de passe</h5>
+
+          <div class="mb-2">
+            <label class="form-label">Ancien mot de passe</label>
+            <input type="password" class="form-control" [(ngModel)]="passwords.ancien"/>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Nouveau mot de passe</label>
+            <input type="password" class="form-control" [(ngModel)]="passwords.nouveau"/>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Confirmer mot de passe</label>
+            <input type="password" class="form-control" [(ngModel)]="passwords.confirmer"/>
+          </div>
+
+          <button class="btn w-100 text-white mt-2" style="background-color: #de7b3b;" (click)="updatePassword()">
+            Modifier mot de passe
+          </button>
+        </div>
+      </div>
+
+      <!-- Supprimer compte -->
+      <div class="card shadow p-3 mt-3 border-danger">
+        <div class="card-body text-center">
+          <h5 class="fw-bold text-danger">Zone dangereuse ⚠️</h5>
+          <p class="text-muted">La suppression de votre compte est irréversible !</p>
+          <button class="btn btn-danger w-100" (click)="deleteCompte()">
+            Supprimer mon compte
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

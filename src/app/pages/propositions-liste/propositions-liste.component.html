@@ -1,0 +1,97 @@
+<app-navbar></app-navbar>
+
+<div class="container mt-4">
+  <h4 class="fw-bold mb-4">📋 Propositions en cours</h4>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover">
+      <thead style="background-color: #de7b3b; color: white;">
+        <tr>
+          <th>ID</th>
+          <th>Description</th>
+          <th>Type</th>
+          <th>Date</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of propositions">
+          <td>{{ p.idDemande }}</td>
+          <td>{{ p.description }}</td>
+          <td>{{ p.typeProposition }}</td>
+          <td>{{ p.dateDemande }}</td>
+          <td>
+            <span class="badge bg-warning">EN COURS</span>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-info me-1 text-white" (click)="voirInfo(p)">
+              Info
+            </button>
+            <button class="btn btn-sm btn-warning me-1" (click)="modifier(p)">
+              Modifier
+            </button>
+            <button class="btn btn-sm btn-danger" (click)="supprimer(p.idDemande)">
+              Supprimer
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="propositions.length === 0">
+          <td colspan="6" class="text-center text-muted">Aucune proposition en cours</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Info -->
+  <div class="modal fade show d-block" *ngIf="selectedProposition" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header" style="background-color: #de7b3b;">
+          <h5 class="modal-title text-white">Détails de la proposition</h5>
+          <button class="btn-close" (click)="selectedProposition = null"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>ID :</strong> {{ selectedProposition.idDemande }}</p>
+          <p><strong>Description :</strong> {{ selectedProposition.description }}</p>
+          <p><strong>Type :</strong> {{ selectedProposition.typeProposition }}</p>
+          <p><strong>Date :</strong> {{ selectedProposition.dateDemande }}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="selectedProposition = null">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Modifier -->
+  <div class="modal fade show d-block" *ngIf="propositionToEdit" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header" style="background-color: #de7b3b;">
+          <h5 class="modal-title text-white">Modifier la proposition</h5>
+          <button class="btn-close" (click)="propositionToEdit = null"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" rows="3" [(ngModel)]="propositionToEdit.description"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Type</label>
+            <select class="form-control" [(ngModel)]="propositionToEdit.typeProposition">
+              <option value="AMELIORATION">Amélioration</option>
+              <option value="SUGGESTION">Suggestion</option>
+              <option value="INNOVATION">Innovation</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="propositionToEdit = null">Annuler</button>
+          <button class="btn text-white" style="background-color: #de7b3b;" (click)="saveModification()">Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

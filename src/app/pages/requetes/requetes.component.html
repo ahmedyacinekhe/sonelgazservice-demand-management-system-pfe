@@ -1,0 +1,40 @@
+<app-navbar></app-navbar>
+
+<div class="container mt-4">
+  <h4 class="fw-bold mb-4">📝 Nouvelle Requête</h4>
+
+  <div class="card shadow p-4">
+    <div class="card-body">
+
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea 
+          class="form-control" 
+          rows="4" 
+          placeholder="Décrivez votre requête..."
+          [(ngModel)]="requete.description">
+        </textarea>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Type de requête</label>
+        <select class="form-control" [(ngModel)]="requete.typeRequete">
+          <option value="">-- Choisir --</option>
+          <option value="ADMINISTRATIVE">Administrative</option>
+          <option value="TECHNIQUE">Technique</option>
+          <option value="CONGE">Congé</option>
+          <option value="MATERIEL">Matériel</option>
+        </select>
+      </div>
+
+      <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+      <div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+
+      <button class="btn w-100 text-white" style="background-color: #de7b3b;" 
+        (click)="submit()" [disabled]="loading">
+        {{ loading ? 'Envoi...' : 'Soumettre la requête' }}
+      </button>
+
+    </div>
+  </div>
+</div>

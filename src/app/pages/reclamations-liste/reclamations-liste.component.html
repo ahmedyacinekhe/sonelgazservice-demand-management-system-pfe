@@ -1,0 +1,107 @@
+<app-navbar></app-navbar>
+
+<div class="container mt-4">
+  <h4 class="fw-bold mb-4">📣 Réclamations en cours</h4>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover">
+      <thead style="background-color: #de7b3b; color: white;">
+        <tr>
+          <th>ID</th>
+          <th>Description</th>
+          <th>Type</th>
+          <th>Urgence</th>
+          <th>Date</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of reclamations">
+          <td>{{ r.idDemande }}</td>
+          <td>{{ r.description }}</td>
+          <td>{{ r.typeReclamation }}</td>
+          <td>
+            <span class="badge" [ngClass]="{
+              'bg-danger': r.niveauUrgence === 'URGENT',
+              'bg-warning': r.niveauUrgence === 'MOYEN',
+              'bg-success': r.niveauUrgence === 'FAIBLE'
+            }">{{ r.niveauUrgence }}</span>
+          </td>
+          <td>{{ r.dateDemande }}</td>
+          <td><span class="badge bg-warning">EN COURS</span></td>
+          <td>
+            <button class="btn btn-sm btn-info me-1 text-white" (click)="voirInfo(r)">Info</button>
+            <button class="btn btn-sm btn-warning me-1" (click)="modifier(r)">Modifier</button>
+            <button class="btn btn-sm btn-danger" (click)="supprimer(r.idDemande)">Supprimer</button>
+          </td>
+        </tr>
+        <tr *ngIf="reclamations.length === 0">
+          <td colspan="7" class="text-center text-muted">Aucune réclamation en cours</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Info -->
+  <div class="modal fade show d-block" *ngIf="selectedReclamation" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header" style="background-color: #de7b3b;">
+          <h5 class="modal-title text-white">Détails de la réclamation</h5>
+          <button class="btn-close" (click)="selectedReclamation = null"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>ID :</strong> {{ selectedReclamation.idDemande }}</p>
+          <p><strong>Description :</strong> {{ selectedReclamation.description }}</p>
+          <p><strong>Type :</strong> {{ selectedReclamation.typeReclamation }}</p>
+          <p><strong>Urgence :</strong> {{ selectedReclamation.niveauUrgence }}</p>
+          <p><strong>Date :</strong> {{ selectedReclamation.dateDemande }}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="selectedReclamation = null">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Modifier -->
+  <div class="modal fade show d-block" *ngIf="reclamationToEdit" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header" style="background-color: #de7b3b;">
+          <h5 class="modal-title text-white">Modifier la réclamation</h5>
+          <button class="btn-close" (click)="reclamationToEdit = null"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" rows="3" [(ngModel)]="reclamationToEdit.description"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Type</label>
+            <select class="form-control" [(ngModel)]="reclamationToEdit.typeReclamation">
+              <option value="TECHNIQUE">Technique</option>
+              <option value="ADMINISTRATIVE">Administrative</option>
+              <option value="SALAIRE">Salaire</option>
+              <option value="AUTRE">Autre</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Niveau d'urgence</label>
+            <select class="form-control" [(ngModel)]="reclamationToEdit.niveauUrgence">
+              <option value="FAIBLE">Faible</option>
+              <option value="MOYEN">Moyen</option>
+              <option value="URGENT">Urgent</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="reclamationToEdit = null">Annuler</button>
+          <button class="btn text-white" style="background-color: #de7b3b;" (click)="saveModification()">Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

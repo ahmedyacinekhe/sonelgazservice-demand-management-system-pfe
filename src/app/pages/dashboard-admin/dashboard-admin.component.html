@@ -1,0 +1,566 @@
+<div class="dashboard-page" (click)="profileMenuOpen = false">
+
+  <!-- NAVBAR -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <button class="sidebar-toggle" (click)="$event.stopPropagation(); toggleSidebar()">
+        <span class="burger-line" [class.line1-open]="sidebarOpen"></span>
+        <span class="burger-line" [class.line2-open]="sidebarOpen"></span>
+        <span class="burger-line" [class.line3-open]="sidebarOpen"></span>
+      </button>
+      <img src="assets/Sonelgaz.png" alt="SonelAsk" class="nav-logo"/>
+      <div class="nav-brand">
+        <span class="brand-main">SonelAsk</span>
+        <span class="brand-sub">Gestion des Demandes</span>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <div class="nav-profile" (click)="$event.stopPropagation(); profileMenuOpen = !profileMenuOpen"
+           [class.open]="profileMenuOpen">
+        <div class="profile-avatar-box">
+          <img src="assets/profile.png" alt="profil" class="avatar-img"
+               (error)="onAvatarError($event)"/>
+        </div>
+        <div class="profile-info">
+          <span class="profile-name">{{ nomUtilisateur }}</span>
+          <span class="profile-role">{{ roleUtilisateur }}</span>
+        </div>
+        <span class="profile-chevron" [class.rotated]="profileMenuOpen">▾</span>
+
+        <div class="profile-dropdown" *ngIf="profileMenuOpen" (click)="$event.stopPropagation()">
+          <div class="dropdown-header">
+            <div class="dropdown-avatar-box">
+              <img src="assets/profile.png" alt="profil" (error)="onAvatarError($event)"/>
+            </div>
+            <div>
+              <div class="dropdown-name">{{ nomUtilisateur }}</div>
+              <div class="dropdown-email">{{ emailUtilisateur }}</div>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item" (click)="activeSection = 'profil'; profileMenuOpen = false">
+            <span>👤</span> Mon Profil
+          </button>
+          <button class="dropdown-item" (click)="activeSection = 'parametres'; profileMenuOpen = false">
+            <span>⚙️</span> Paramètres
+          </button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item dropdown-item-danger" routerLink="/login" (click)="profileMenuOpen = false">
+            <span>🚪</span> Se déconnecter
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" [class.open]="sidebarOpen">
+      <div class="sidebar-menu">
+
+        <button class="sidebar-item" [class.active]="activeSection === 'home'"
+                (click)="activeSection = 'home'; closeSidebarMobile()">
+          <img src="assets/accueil.webp" alt="" class="sidebar-icon"/>
+          <span>Accueil</span>
+        </button>
+
+        <button class="sidebar-item" [class.active]="activeSection === 'demandes'"
+                (click)="activeSection = 'demandes'; demandeTypeSelectionne = ''; closeSidebarMobile()">
+          <img src="assets/demandes.svg" alt="" class="sidebar-icon"/>
+          <span>Ajouter demande</span>
+        </button>
+
+        <button class="sidebar-item" [class.active]="activeSection === 'historique'"
+                (click)="activeSection = 'historique'; closeSidebarMobile()">
+          <img src="assets/historique.webp" alt="" class="sidebar-icon"/>
+          <span>Historique</span>
+        </button>
+
+        <div class="sidebar-separator"><span>Administration</span></div>
+
+        <button class="sidebar-item" [class.active]="activeSection === 'utilisateurs'"
+                (click)="activeSection = 'utilisateurs'; loadAll(); closeSidebarMobile()">
+          <img src="assets/utilisateurs.webp" alt="" class="sidebar-icon"/>
+          <span>Gestion Utilisateurs</span>
+        </button>
+
+        <button class="sidebar-item" [class.active]="activeSection === 'roles'"
+                (click)="activeSection = 'roles'; loadAll(); closeSidebarMobile()">
+          <img src="assets/role.webp" alt="" class="sidebar-icon"/>
+          <span>Gestion des Rôles</span>
+        </button>
+
+        <button class="sidebar-item" [class.active]="activeSection === 'permissions'"
+                (click)="activeSection = 'permissions'; loadAll(); closeSidebarMobile()">
+          <img src="assets/permission.webp" alt="" class="sidebar-icon"/>
+          <span>Gestion Permissions</span>
+        </button>
+
+        <button class="sidebar-item" [class.active]="activeSection === 'departements'"
+                (click)="activeSection = 'departements'; loadAll(); closeSidebarMobile()">
+          <img src="assets/department.webp" alt="" class="sidebar-icon"/>
+          <span>Gestion Départements</span>
+        </button>
+
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="sidebar-profile-btn"
+                (click)="activeSection = 'profil'; closeSidebarMobile()"
+                [class.active]="activeSection === 'profil'">
+          <div class="sidebar-avatar-box">
+            <img src="assets/profile.png" alt="profil" (error)="onAvatarError($event)"/>
+          </div>
+          <div class="sidebar-profile-info">
+            <span class="sidebar-profile-name">{{ nomUtilisateur }}</span>
+            <span class="sidebar-profile-role">{{ roleUtilisateur }}</span>
+          </div>
+        </button>
+      </div>
+    </aside>
+
+    <div class="sidebar-overlay" *ngIf="sidebarOpen" (click)="sidebarOpen = false"></div>
+
+    <!-- CONTENU -->
+    <main class="main-content">
+
+      <!-- ACCUEIL -->
+      <div *ngIf="activeSection === 'home'">
+        <div class="page-header">
+          <h4 class="page-title">Tableau de bord Admin</h4>
+          <p class="page-subtitle">Bienvenue sur SonelAsk — Gérez l'application</p>
+        </div>
+        <div class="home-cards">
+          <div class="home-card" (click)="activeSection = 'utilisateurs'; loadAll()">
+            <div class="home-card-icon"><img src="assets/utilisateurs.webp" alt=""/></div>
+            <div class="home-card-label">Gestion Utilisateurs</div>
+            <div class="home-card-count">{{ utilisateurs.length }} utilisateurs</div>
+          </div>
+          <div class="home-card" (click)="activeSection = 'roles'; loadAll()">
+            <div class="home-card-icon"><img src="assets/role.webp" alt=""/></div>
+            <div class="home-card-label">Gestion des Rôles</div>
+            <div class="home-card-count">{{ roles.length }} rôles</div>
+          </div>
+          <div class="home-card" (click)="activeSection = 'permissions'; loadAll()">
+            <div class="home-card-icon"><img src="assets/permission.webp" alt=""/></div>
+            <div class="home-card-label">Gestion Permissions</div>
+            <div class="home-card-count">{{ permissions.length }} permissions</div>
+          </div>
+          <div class="home-card" (click)="activeSection = 'departements'; loadAll()">
+            <div class="home-card-icon"><img src="assets/department.webp" alt=""/></div>
+            <div class="home-card-label">Gestion Départements</div>
+            <div class="home-card-count">{{ departements.length }} départements</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AJOUTER DEMANDE -->
+      <div *ngIf="activeSection === 'demandes'">
+        <div class="page-header">
+          <h4 class="page-title">📋 Ajouter une demande</h4>
+          <p class="page-subtitle">Choisissez le type de demande à soumettre</p>
+        </div>
+
+        <div *ngIf="!demandeTypeSelectionne" class="demande-type-cards">
+          <div class="demande-type-card" (click)="selectTypeDemande('PROPOSITION')">
+            <div class="demande-type-icon">📋</div>
+            <h5 class="demande-type-title">Proposition</h5>
+            <p class="demande-type-desc">Soumettre une nouvelle proposition</p>
+            <button type="button" class="btn-ajouter">Ajouter</button>
+          </div>
+          <div class="demande-type-card" (click)="selectTypeDemande('REQUETE')">
+            <div class="demande-type-icon">📝</div>
+            <h5 class="demande-type-title">Requête</h5>
+            <p class="demande-type-desc">Soumettre une nouvelle requête</p>
+            <button type="button" class="btn-ajouter">Ajouter</button>
+          </div>
+          <div class="demande-type-card" (click)="selectTypeDemande('RECLAMATION')">
+            <div class="demande-type-icon">📢</div>
+            <h5 class="demande-type-title">Réclamation</h5>
+            <p class="demande-type-desc">Soumettre une nouvelle réclamation</p>
+            <button type="button" class="btn-ajouter">Ajouter</button>
+          </div>
+        </div>
+
+        <div *ngIf="demandeTypeSelectionne" class="form-card demande-detail-card">
+          <div class="form-card-header">
+            <button type="button" class="btn-back" (click)="annulerDemandeForm()">← Retour</button>
+            <h6 class="form-card-title demande-form-heading">
+              {{ demandeTypeSelectionne === 'PROPOSITION' ? '📋 Nouvelle Proposition' :
+                 demandeTypeSelectionne === 'REQUETE' ? '📝 Nouvelle Requête' : '📢 Nouvelle Réclamation' }}
+            </h6>
+          </div>
+
+          <div class="demande-form-body">
+            <div class="field-group">
+              <label>Description <span class="req">*</span></label>
+              <textarea
+                class="field-input field-textarea"
+                rows="5"
+                [placeholder]="demandeTypeSelectionne === 'REQUETE' ? 'Décrivez votre requête...' :
+                  demandeTypeSelectionne === 'RECLAMATION' ? 'Décrivez votre réclamation...' :
+                  'Décrivez votre proposition...'"
+                [(ngModel)]="nouvelleDemande.description">
+              </textarea>
+            </div>
+
+            <div class="field-group" *ngIf="demandeTypeSelectionne === 'REQUETE'">
+              <label>Type de requête <span class="req">*</span></label>
+              <select class="field-input" [(ngModel)]="nouvelleDemande.typeRequete">
+                <option value="">-- Choisir --</option>
+                <option value="ADMINISTRATIVE">Administrative</option>
+                <option value="TECHNIQUE">Technique</option>
+                <option value="CONGE">Congé</option>
+                <option value="MATERIEL">Matériel</option>
+              </select>
+            </div>
+
+            <div class="field-group" *ngIf="demandeTypeSelectionne === 'RECLAMATION'">
+              <label>Type de réclamation <span class="req">*</span></label>
+              <select class="field-input" [(ngModel)]="nouvelleDemande.typeReclamation">
+                <option value="">-- Choisir --</option>
+                <option value="TECHNIQUE">Technique</option>
+                <option value="ADMINISTRATIVE">Administrative</option>
+                <option value="SALAIRE">Salaire</option>
+                <option value="AUTRE">Autre</option>
+              </select>
+            </div>
+
+            <div class="field-group" *ngIf="demandeTypeSelectionne === 'RECLAMATION'">
+              <label>Niveau d'urgence <span class="req">*</span></label>
+              <select class="field-input" [(ngModel)]="nouvelleDemande.niveauUrgence">
+                <option value="">-- Choisir --</option>
+                <option value="FAIBLE">Faible</option>
+                <option value="MOYEN">Moyen</option>
+                <option value="URGENT">Urgent</option>
+              </select>
+            </div>
+
+            <div class="field-group" *ngIf="demandeTypeSelectionne === 'PROPOSITION'">
+              <label>Type de proposition <span class="req">*</span></label>
+              <select class="field-input" [(ngModel)]="nouvelleDemande.typeProposition">
+                <option value="">-- Choisir --</option>
+                <option value="AMELIORATION">Amélioration</option>
+                <option value="SUGGESTION">Suggestion</option>
+                <option value="INNOVATION">Innovation</option>
+              </select>
+            </div>
+
+            <div class="demande-alert demande-alert-error" *ngIf="demandeError">{{ demandeError }}</div>
+            <div class="demande-alert demande-alert-success" *ngIf="demandeSuccess">{{ demandeSuccess }}</div>
+          </div>
+
+          <div class="demande-actions-bar">
+            <button
+              type="button"
+              class="btn-demande-submit"
+              (click)="soumettredemande()"
+              [disabled]="demandeSubmitting">
+              {{ demandeSubmitting ? 'Envoi…' :
+                (demandeTypeSelectionne === 'REQUETE' ? 'Soumettre la requête' :
+                 demandeTypeSelectionne === 'RECLAMATION' ? 'Soumettre la réclamation' :
+                 'Soumettre la proposition') }}
+            </button>
+            <button type="button" class="btn-demande-cancel" (click)="annulerDemandeForm()" [disabled]="demandeSubmitting">
+              Annuler
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORIQUE -->
+      <div *ngIf="activeSection === 'historique'">
+        <div class="page-header">
+          <h4 class="page-title">Historique</h4>
+          <p class="page-subtitle">Consultez l'historique des actions</p>
+        </div>
+        <div class="empty-section">
+          <div class="empty-icon-text">🕐</div>
+          <p>Aucun historique disponible</p>
+        </div>
+      </div>
+
+      <!-- MON PROFIL -->
+      <div *ngIf="activeSection === 'profil'">
+        <div class="page-header">
+          <h4 class="page-title">Mon Profil</h4>
+          <p class="page-subtitle">Vos informations personnelles</p>
+        </div>
+        <div class="profil-card">
+          <div class="profil-top">
+            <div class="profil-avatar-box">
+              <img src="assets/profile.png" alt="profil" (error)="onAvatarError($event)"/>
+            </div>
+            <div>
+              <h5 class="profil-full-name">{{ nomUtilisateur }}</h5>
+              <span class="profil-badge">{{ roleUtilisateur }}</span>
+            </div>
+          </div>
+          <div class="profil-divider"></div>
+          <div class="profil-infos">
+            <div class="profil-info-row">
+              <span class="profil-info-label">👤 Prénom</span>
+              <span class="profil-info-value">{{ prenomUtilisateur || '—' }}</span>
+            </div>
+            <div class="profil-info-row">
+              <span class="profil-info-label">👤 Nom</span>
+              <span class="profil-info-value">{{ nomFamilleUtilisateur || '—' }}</span>
+            </div>
+            <div class="profil-info-row">
+              <span class="profil-info-label">📧 Email</span>
+              <span class="profil-info-value">{{ emailUtilisateur }}</span>
+            </div>
+            <div class="profil-info-row">
+              <span class="profil-info-label">📱 Téléphone</span>
+              <span class="profil-info-value">{{ telUtilisateur || '—' }}</span>
+            </div>
+            <div class="profil-info-row">
+              <span class="profil-info-label">🔑 Rôle</span>
+              <span class="profil-info-value">{{ roleUtilisateur }}</span>
+            </div>
+            <div class="profil-info-row">
+              <span class="profil-info-label">✅ Statut</span>
+              <span class="badge badge-green">Actif</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PARAMÈTRES -->
+      <div *ngIf="activeSection === 'parametres'">
+        <div class="page-header">
+          <h4 class="page-title">Paramètres</h4>
+          <p class="page-subtitle">Configurez votre compte</p>
+        </div>
+
+        <!-- Mot de passe -->
+        <div class="param-section-card">
+          <h6 class="param-section-title">🔐 Modifier le mot de passe</h6>
+          <div class="param-form">
+            <div class="field-group">
+              <label>Ancien mot de passe</label>
+              <input type="password" class="field-input" placeholder="••••••••"
+                     [(ngModel)]="mdp.ancien"/>
+            </div>
+            <div class="row-2">
+              <div class="field-group">
+                <label>Nouveau mot de passe</label>
+                <input type="password" class="field-input" placeholder="••••••••"
+                       [(ngModel)]="mdp.nouveau"/>
+              </div>
+              <div class="field-group">
+                <label>Confirmer</label>
+                <input type="password" class="field-input" placeholder="••••••••"
+                       [(ngModel)]="mdp.confirmer"/>
+              </div>
+            </div>
+            <button class="btn-action" (click)="changerMotDePasse()">
+              Enregistrer le mot de passe
+            </button>
+          </div>
+        </div>
+
+        <!-- Langue -->
+        <div class="param-section-card">
+          <h6 class="param-section-title">🌐 Langue de l'interface</h6>
+          <div class="param-form">
+            <div class="field-group">
+              <label>Choisir la langue</label>
+              <select class="field-input" [(ngModel)]="langueSelectionnee">
+                <option value="fr">🇫🇷 Français</option>
+                <option value="ar">🇩🇿 Arabe</option>
+                <option value="en">🇬🇧 Anglais</option>
+              </select>
+            </div>
+            <button class="btn-action" (click)="changerLangue()">
+              Appliquer la langue
+            </button>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="param-section-card">
+          <h6 class="param-section-title">🔔 Notifications</h6>
+          <div class="param-toggles">
+            <div class="param-toggle-row">
+              <div>
+                <div class="param-toggle-label">Notifications par email</div>
+                <div class="param-toggle-desc">Recevoir les alertes par email</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" [(ngModel)]="notifEmail"/>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="param-toggle-row">
+              <div>
+                <div class="param-toggle-label">Notifications dans l'application</div>
+                <div class="param-toggle-desc">Afficher les alertes dans le dashboard</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" [(ngModel)]="notifApp"/>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- UTILISATEURS -->
+      <div *ngIf="activeSection === 'utilisateurs'">
+        <div class="page-header">
+          <h4 class="page-title">Gestion des Utilisateurs</h4>
+          <p class="page-subtitle">Gérez les comptes et les rôles</p>
+        </div>
+        <div class="form-card">
+          <h6 class="form-card-title">Affecter un rôle</h6>
+          <div class="form-row">
+            <div class="field-group">
+              <label>Utilisateur</label>
+              <select class="field-input" [(ngModel)]="affectation.idUtil">
+                <option [value]="0">-- Choisir --</option>
+                <option *ngFor="let u of utilisateurs" [value]="u.idUtil">{{ u.prenomUtil }} {{ u.nomUtil }}</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>Rôle</label>
+              <select class="field-input" [(ngModel)]="affectation.idRole">
+                <option [value]="0">-- Choisir --</option>
+                <option *ngFor="let r of roles" [value]="r.idRole">{{ r.nomRole }}</option>
+              </select>
+            </div>
+            <button class="btn-action" (click)="affecterRole()">Affecter</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr><th>ID</th><th>Nom</th><th>Prénom</th><th>Email</th><th>Téléphone</th><th>Rôle</th><th>État</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let u of utilisateurs">
+                <td>{{ u.idUtil }}</td><td>{{ u.nomUtil }}</td><td>{{ u.prenomUtil }}</td>
+                <td>{{ u.emailUtil }}</td><td>{{ u.numTel }}</td>
+                <td><span class="badge badge-blue">{{ getRoleUtilisateur(u.idUtil) }}</span></td>
+                <td><span class="badge" [ngClass]="u.etatCompte === 'ACTIF' ? 'badge-green' : 'badge-gray'">{{ u.etatCompte }}</span></td>
+                <td class="actions-cell">
+                  <button class="btn-table" [ngClass]="u.etatCompte === 'ACTIF' ? 'btn-warn' : 'btn-success'" (click)="toggleEtatCompte(u)">{{ u.etatCompte === 'ACTIF' ? 'Désactiver' : 'Activer' }}</button>
+                  <button class="btn-table btn-danger" (click)="supprimerUtilisateur(u.idUtil)">Supprimer</button>
+                </td>
+              </tr>
+              <tr *ngIf="utilisateurs.length === 0"><td colspan="8" class="empty-row">Aucun utilisateur</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RÔLES -->
+      <div *ngIf="activeSection === 'roles'">
+        <div class="page-header">
+          <h4 class="page-title">Gestion des Rôles</h4>
+          <p class="page-subtitle">Créez et gérez les rôles</p>
+        </div>
+        <div class="form-card">
+          <h6 class="form-card-title">Ajouter un rôle</h6>
+          <div class="form-row">
+            <div class="field-group"><label>Nom</label><input type="text" class="field-input" placeholder="Nom du rôle" [(ngModel)]="nouveauRole.nomRole"/></div>
+            <div class="field-group"><label>Description</label><input type="text" class="field-input" placeholder="Description" [(ngModel)]="nouveauRole.descriptionRole"/></div>
+            <button class="btn-action" (click)="saveRole()">Ajouter</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr><th>ID</th><th>Nom</th><th>Description</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let r of roles">
+                <td>{{ r.idRole }}</td>
+                <td><span *ngIf="roleEdite?.idRole !== r.idRole">{{ r.nomRole }}</span><input *ngIf="roleEdite?.idRole === r.idRole" type="text" class="field-input-sm" [(ngModel)]="roleEdite.nomRole"/></td>
+                <td><span *ngIf="roleEdite?.idRole !== r.idRole">{{ r.descriptionRole }}</span><input *ngIf="roleEdite?.idRole === r.idRole" type="text" class="field-input-sm" [(ngModel)]="roleEdite.descriptionRole"/></td>
+                <td class="actions-cell">
+                  <button *ngIf="roleEdite?.idRole !== r.idRole" class="btn-table btn-warn" (click)="editerRole(r)">Modifier</button>
+                  <button *ngIf="roleEdite?.idRole === r.idRole" class="btn-table btn-success" (click)="updateRole()">Enregistrer</button>
+                  <button *ngIf="roleEdite?.idRole === r.idRole" class="btn-table btn-gray" (click)="roleEdite = null">Annuler</button>
+                  <button class="btn-table btn-danger" (click)="supprimerRole(r.idRole)">Supprimer</button>
+                </td>
+              </tr>
+              <tr *ngIf="roles.length === 0"><td colspan="4" class="empty-row">Aucun rôle</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PERMISSIONS -->
+      <div *ngIf="activeSection === 'permissions'">
+        <div class="page-header">
+          <h4 class="page-title">Gestion des Permissions</h4>
+          <p class="page-subtitle">Créez et gérez les permissions</p>
+        </div>
+        <div class="form-card">
+          <h6 class="form-card-title">Ajouter une permission</h6>
+          <div class="form-row">
+            <div class="field-group"><label>Nom</label><input type="text" class="field-input" placeholder="Nom" [(ngModel)]="nouvellePermission.nomPermission"/></div>
+            <div class="field-group"><label>Description</label><input type="text" class="field-input" placeholder="Description" [(ngModel)]="nouvellePermission.descriptionPermission"/></div>
+            <button class="btn-action" (click)="savePermission()">Ajouter</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr><th>ID</th><th>Nom</th><th>Description</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let p of permissions">
+                <td>{{ p.idPermission }}</td>
+                <td><span *ngIf="permissionEditee?.idPermission !== p.idPermission">{{ p.nomPermission }}</span><input *ngIf="permissionEditee?.idPermission === p.idPermission" type="text" class="field-input-sm" [(ngModel)]="permissionEditee.nomPermission"/></td>
+                <td><span *ngIf="permissionEditee?.idPermission !== p.idPermission">{{ p.descriptionPermission }}</span><input *ngIf="permissionEditee?.idPermission === p.idPermission" type="text" class="field-input-sm" [(ngModel)]="permissionEditee.descriptionPermission"/></td>
+                <td class="actions-cell">
+                  <button *ngIf="permissionEditee?.idPermission !== p.idPermission" class="btn-table btn-warn" (click)="editerPermission(p)">Modifier</button>
+                  <button *ngIf="permissionEditee?.idPermission === p.idPermission" class="btn-table btn-success" (click)="updatePermission()">Enregistrer</button>
+                  <button *ngIf="permissionEditee?.idPermission === p.idPermission" class="btn-table btn-gray" (click)="permissionEditee = null">Annuler</button>
+                  <button class="btn-table btn-danger" (click)="supprimerPermission(p.idPermission)">Supprimer</button>
+                </td>
+              </tr>
+              <tr *ngIf="permissions.length === 0"><td colspan="4" class="empty-row">Aucune permission</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DÉPARTEMENTS -->
+      <div *ngIf="activeSection === 'departements'">
+        <div class="page-header">
+          <h4 class="page-title">Gestion des Départements</h4>
+          <p class="page-subtitle">Créez et gérez les départements</p>
+        </div>
+        <div class="form-card">
+          <h6 class="form-card-title">Ajouter un département</h6>
+          <div class="form-row">
+            <div class="field-group"><label>Nom</label><input type="text" class="field-input" placeholder="Nom" [(ngModel)]="nouveauDepartement.nomDepartement"/></div>
+            <div class="field-group"><label>Description</label><input type="text" class="field-input" placeholder="Description" [(ngModel)]="nouveauDepartement.descriptionDepartement"/></div>
+            <button class="btn-action" (click)="saveDepartement()">Ajouter</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr><th>ID</th><th>Nom</th><th>Description</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let d of departements">
+                <td>{{ d.idDepartement }}</td>
+                <td><span *ngIf="departementEdite?.idDepartement !== d.idDepartement">{{ d.nomDepartement }}</span><input *ngIf="departementEdite?.idDepartement === d.idDepartement" type="text" class="field-input-sm" [(ngModel)]="departementEdite.nomDepartement"/></td>
+                <td><span *ngIf="departementEdite?.idDepartement !== d.idDepartement">{{ d.descriptionDepartement }}</span><input *ngIf="departementEdite?.idDepartement === d.idDepartement" type="text" class="field-input-sm" [(ngModel)]="departementEdite.descriptionDepartement"/></td>
+                <td class="actions-cell">
+                  <button *ngIf="departementEdite?.idDepartement !== d.idDepartement" class="btn-table btn-warn" (click)="editerDepartement(d)">Modifier</button>
+                  <button *ngIf="departementEdite?.idDepartement === d.idDepartement" class="btn-table btn-success" (click)="updateDepartement()">Enregistrer</button>
+                  <button *ngIf="departementEdite?.idDepartement === d.idDepartement" class="btn-table btn-gray" (click)="departementEdite = null">Annuler</button>
+                  <button class="btn-table btn-danger" (click)="supprimerDepartement(d.idDepartement)">Supprimer</button>
+                </td>
+              </tr>
+              <tr *ngIf="departements.length === 0"><td colspan="4" class="empty-row">Aucun département</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="footer-bar">© {{ currentYear }} SonelAsk — Tous droits réservés</div>
+</div>

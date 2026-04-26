@@ -1,0 +1,39 @@
+<app-navbar></app-navbar>
+
+<div class="container mt-4">
+  <h4 class="fw-bold mb-4">📋 Nouvelle Proposition</h4>
+
+  <div class="card shadow p-4">
+    <div class="card-body">
+
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea 
+          class="form-control" 
+          rows="4" 
+          placeholder="Décrivez votre proposition..."
+          [(ngModel)]="proposition.description">
+        </textarea>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Type de proposition</label>
+        <select class="form-control" [(ngModel)]="proposition.typeProposition">
+          <option value="">-- Choisir --</option>
+          <option value="AMELIORATION">Amélioration</option>
+          <option value="SUGGESTION">Suggestion</option>
+          <option value="INNOVATION">Innovation</option>
+        </select>
+      </div>
+
+      <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+      <div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+
+      <button class="btn w-100 text-white" style="background-color: #de7b3b;" 
+        (click)="submit()" [disabled]="loading">
+        {{ loading ? 'Envoi...' : 'Soumettre la proposition' }}
+      </button>
+
+    </div>
+  </div>
+</div>

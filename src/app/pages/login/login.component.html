@@ -1,0 +1,112 @@
+<div class="login-page">
+
+  <!-- NAVBAR -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <img src="assets/Sonelgaz.png" alt="Sonelgaz" class="nav-logo"/>
+      <div class="nav-brand" (click)="goHome()">
+        <span class="brand-main">SonelAsk</span>
+        <span class="brand-sub">Gestion des Demandes</span>
+      </div>
+    </div>
+    <div class="nav-right">
+      <button class="nav-btn outline" (click)="showChoixModal = true">
+        M'inscrire
+      </button>
+      <button class="nav-btn filled" (click)="scrollToForm()">
+        Me connecter
+      </button>
+    </div>
+  </nav>
+
+  <!-- MODAL CHOIX INSCRIPTION -->
+  <div class="modal-overlay" *ngIf="showChoixModal" (click)="showChoixModal = false">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Je souhaite m'inscrire en tant que</h3>
+      <p class="modal-desc">Choisissez votre type de compte</p>
+      <div class="modal-choices">
+        <a routerLink="/register-employe" class="choice-card" (click)="showChoixModal = false">
+          <div class="choice-icon">
+            <img src="assets/employe_1.webp" alt="Employé"/>
+          </div>
+          <div class="choice-label">Employé</div>
+          <div class="choice-desc">Membre du personnel Sonelgaz</div>
+        </a>
+        <a routerLink="/register-client" class="choice-card" (click)="showChoixModal = false">
+          <div class="choice-icon">
+            <img src="assets/employe.webp" alt="Client"/>
+          </div>
+          <div class="choice-label">Client</div>
+          <div class="choice-desc">Particulier ou entreprise</div>
+        </a>
+      </div>
+      <button class="modal-close" (click)="showChoixModal = false">Annuler</button>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <h1 class="hero-title">Bienvenue sur la plateforme</h1>
+      <h2 class="hero-subtitle">SonelAsk</h2>
+      <p class="hero-desc">
+        Gérez vos propositions, requêtes et réclamations en ligne.
+      </p>
+
+      <!-- FORMULAIRE LOGIN -->
+      <div class="login-form-card" *ngIf="showLoginForm">
+        <h3 class="form-title">Connexion</h3>
+
+        <div class="field-group">
+          <label>Adresse email <span class="req">*</span></label>
+          <input type="email" class="field-input"
+                 placeholder="votre@email.com"
+                 [(ngModel)]="credentials.email"/>
+        </div>
+
+        <div class="field-group">
+          <label>Mot de passe <span class="req">*</span></label>
+          <input type="password" class="field-input"
+                 placeholder="••••••••"
+                 [(ngModel)]="credentials.password"/>
+        </div>
+
+        <div class="alert-error" *ngIf="errorMessage">
+          ⚠️ {{ errorMessage }}
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-login" (click)="login()" [disabled]="loading">
+            <span *ngIf="!loading">Se connecter →</span>
+            <span *ngIf="loading">Connexion...</span>
+          </button>
+          <span class="form-actions-space"></span>
+          <button class="btn-cancel" (click)="goHome()">Annuler</button>
+        </div>
+
+        <div class="register-row">
+          <span>Pas de compte ?</span>
+          <a routerLink="/register-employe">Créer un compte Employé</a>
+          <span>·</span>
+          <a routerLink="/register-client">Créer un compte Client</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="hero-right">
+      <div class="image-blob">
+        <img src="assets/sonelgaz-bg.avif" alt="Sonelgaz"
+             onerror="this.style.display='none'"/>
+        <div class="blob-fallback">
+          <p>Énergie & Services</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bar">
+    © {{ currentYear }} SonelAsk — Tous droits réservés
+  </div>
+
+</div>

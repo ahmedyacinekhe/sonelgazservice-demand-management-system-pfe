@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "pfe-frontend": {
+    "pfe-frontend": {  
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -11,8 +11,8 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
-          "options": {
+          "builder": "@angular-devkit/build-angular:application", 
+          "options": {  
             "outputPath": "dist/pfe-frontend",
             "index": "src/index.html",
             "browser": "src/main.ts",
@@ -21,13 +21,16 @@
             ],
             "tsConfig": "tsconfig.app.json",
             "assets": [
-              {
-                "glob": "**/*",
-                "input": "public"
-              }
-            ],
+                      {
+                          "glob": "**/*",
+                         "input": "public"
+                      },
+                            "src/favicon.ico",
+                             "src/assets"
+                      ],
             "styles": [
-              "src/styles.css"
+               "node_modules/bootstrap/dist/css/bootstrap.min.css",
+                    "src/styles.css"
             ],
             "scripts": []
           },
@@ -92,5 +95,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": false
   }
 }
