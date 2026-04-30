@@ -28,6 +28,12 @@ export class DashboardAdminComponent implements OnInit {
   emailUtilisateur      = 'admin@sonelgaz.dz';
   telUtilisateur        = '';
   roleUtilisateur       = 'Admin';
+  matricule             = '';
+  dateEmbauche          = '';
+  nomDepartement        = '';
+
+  editProfil = false;
+  profilEdit = { prenomUtil: '', nomUtil: '', numTel: '' };
 
   mdp = { ancien: '', nouveau: '', confirmer: '' };
   langueSelectionnee = 'fr';
@@ -59,6 +65,9 @@ export class DashboardAdminComponent implements OnInit {
   nouveauRole         = { nomRole: '', descriptionRole: '' };
   roleEdite: any      = null;
   affectation         = { idUtil: 0, idRole: 0 };
+
+  permissionsRole: { [idRole: number]: number[] } = {};
+  nouvellePermissionRole: number[] = [];
 
   private baseUrl = 'http://localhost:8082';
 
@@ -99,20 +108,41 @@ export class DashboardAdminComponent implements OnInit {
         this.roleUtilisateur  = payload.role || payload.roles?.[0] || 'Admin';
       } catch { /* ignore */ }
     }
-    this.http.get<any>(`${this.baseUrl}/Api/utilisateurs/me`, { headers: this.getHeaders() })
+    this.http.get<any>(`${this.baseUrl}/Api/employes/me`, { headers: this.getHeaders() })
       .subscribe({
         next: (u) => {
           this.prenomUtilisateur     = u.prenomUtil  || '';
           this.nomFamilleUtilisateur = u.nomUtil     || '';
           this.nomUtilisateur        = `${u.prenomUtil || ''} ${u.nomUtil || ''}`.trim() || 'Administrateur';
           this.emailUtilisateur      = u.emailUtil   || this.emailUtilisateur;
-          this.telUtilisateur        = u.numTel      || '';
+          this.telUtilisateur        = String(u.numTel || '');
+          this.matricule             = u.matricule   || '';
+          this.dateEmbauche          = u.dateEmbauche || '';
+          this.nomDepartement        = u.departement?.nomDepartement || '';
+          this.profilEdit = {
+            prenomUtil: this.prenomUtilisateur,
+            nomUtil: this.nomFamilleUtilisateur,
+            numTel: this.telUtilisateur
+          };
           const lr = this.authService.getRole();
-          if (lr) {
-            this.roleUtilisateur = lr;
-          }
+          if (lr) this.roleUtilisateur = lr;
         },
         error: () => {}
+      });
+  }
+
+  sauvegarderProfil() {
+    this.http.put(`${this.baseUrl}/Api/employes/me`, this.profilEdit, { headers: this.getHeaders() })
+      .subscribe({
+        next: () => {
+          this.prenomUtilisateur     = this.profilEdit.prenomUtil;
+          this.nomFamilleUtilisateur = this.profilEdit.nomUtil;
+          this.telUtilisateur        = this.profilEdit.numTel;
+          this.nomUtilisateur        = `${this.profilEdit.prenomUtil} ${this.profilEdit.nomUtil}`.trim();
+          this.editProfil = false;
+          alert('Profil mis à jour !');
+        },
+        error: () => alert('Erreur lors de la mise à jour.')
       });
   }
 
@@ -187,16 +217,14 @@ export class DashboardAdminComponent implements OnInit {
         error: onErr
       });
     } else if (this.demandeTypeSelectionne === 'RECLAMATION') {
-      this.reclamationService
-        .save({
-          description: d.description,
-          typeReclamation: d.typeReclamation,
-          niveauUrgence: d.niveauUrgence
-        })
-        .subscribe({
-          next: () => onDone('Réclamation soumise avec succès !'),
-          error: onErr
-        });
+      this.reclamationService.save({
+        description: d.description,
+        typeReclamation: d.typeReclamation,
+        niveauUrgence: d.niveauUrgence
+      }).subscribe({
+        next: () => onDone('Réclamation soumise avec succès !'),
+        error: onErr
+      });
     } else if (this.demandeTypeSelectionne === 'PROPOSITION') {
       this.propositionService.save({ description: d.description, typeProposition: d.typeProposition }).subscribe({
         next: () => onDone('Proposition soumise avec succès !'),
@@ -252,6 +280,42 @@ export class DashboardAdminComponent implements OnInit {
   getRoleUtilisateur(idUtil: number): string {
     const ru = this.rolesUtilisateurs.find(r => r.roleUtilisateurId?.idUtil === idUtil);
     return ru ? ru.role?.nomRole : 'AUCUN';
+  }
+
+  isPermissionSelected(idPermission: number): boolean {
+    return this.nouvellePermissionRole.includes(idPermission);
+  }
+
+  togglePermission(idPermission: number) {
+    const index = this.nouvellePermissionRole.indexOf(idPermission);
+    if (index === -1) {
+      this.nouvellePermissionRole.push(idPermission);
+    } else {
+      this.nouvellePermissionRole.splice(index, 1);
+    }
+  }
+
+  saveRoleAvecPermissions() {
+    if (!this.nouveauRole.nomRole) { alert('Nom requis !'); return; }
+    this.http.post<any>(`${this.baseUrl}/Api/roles`, this.nouveauRole, { headers: this.getHeaders() })
+      .subscribe({
+        next: (role) => {
+          const idRole = role.idRole;
+          const requests = this.nouvellePermissionRole.map(idPerm =>
+            this.http.post(`${this.baseUrl}/Api/rolesPermissions`,
+              { rolePermissionId: { idRole, idPermission: idPerm } },
+              { headers: this.getHeaders() }
+            ).toPromise()
+          );
+          Promise.all(requests).then(() => {
+            this.nouveauRole = { nomRole: '', descriptionRole: '' };
+            this.nouvellePermissionRole = [];
+            this.loadRoles();
+            alert('Rôle créé avec permissions !');
+          });
+        },
+        error: () => alert('Erreur lors de la création du rôle.')
+      });
   }
 
   supprimerUtilisateur(id: number) {

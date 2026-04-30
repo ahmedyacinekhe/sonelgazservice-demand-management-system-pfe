@@ -22,21 +22,19 @@ export class DashboardComponent implements OnInit {
   profileMenuOpen = false;
   currentYear = new Date().getFullYear();
 
-  // Infos utilisateur (pas de libellé « Administrateur » par défaut : évite confusion pour un CLIENT, etc.)
   nomUtilisateur        = '';
   prenomUtilisateur     = '';
   nomFamilleUtilisateur = '';
   emailUtilisateur      = '';
   telUtilisateur        = '';
   roleUtilisateur       = '';
+  profilExtra: any      = null;  // ← ADDED
 
-  // Paramètres
   mdp = { ancien: '', nouveau: '', confirmer: '' };
   langueSelectionnee = 'fr';
   notifEmail = true;
   notifApp   = true;
 
-  // Demande (mêmes champs que les pages propositions / requêtes / réclamations)
   demandeTypeSelectionne = '';
   demandeSubmitting = false;
   demandeError = '';
@@ -63,14 +61,8 @@ export class DashboardComponent implements OnInit {
   roleEdite: any      = null;
   affectation         = { idUtil: 0, idRole: 0 };
 
-  /**
-   * Profil connecté : rôle ADMIN (écran dédié /dashboard-admin en usage normal)
-   * vs profils employé / responsable / client sur ce tableau.
-   */
   isAdmin = false;
-  /** Toujours vrai pour les non-admins : Accueil, Ajouter demande, Historique dans la sidebar. */
   showEmployeMenus = false;
-  /** Ex. responsable avec permission TRAITER_DEMANDE (ou TRAITER_DEMANDES) — gestion des dossiers. */
   canTraiterDemandes = false;
   canGererUtilisateurs = false;
   canGererRoles = false;
@@ -98,7 +90,6 @@ export class DashboardComponent implements OnInit {
     this.loadCurrentUser();
   }
 
-  /** Si la section courante n'est pas autorisée pour ce profil, revenir à l'accueil. */
   normalizeActiveSection(): void {
     const s = this.activeSection;
     if (!this.showEmployeMenus && (s === 'demandes' || s === 'historique')) {
@@ -124,11 +115,9 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  /** Met à jour les drapeaux à partir du rôle et des permissions stockés après login. */
   refreshAccessFlags(): void {
     this.isAdmin = this.authService.isAdminRole();
     this.showEmployeMenus = !this.isAdmin;
-    // Gestion opérationnelle des demandes : uniquement si la permission est dans le JWT (ex. responsable).
     this.canTraiterDemandes =
       this.showEmployeMenus &&
       (this.authService.hasPermission('TRAITER_DEMANDE') ||
@@ -167,7 +156,6 @@ export class DashboardComponent implements OnInit {
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
-  /** Première valeur textuelle non vide parmi plusieurs clés possibles (API client / employé / Spring). */
   private pickProfileField(obj: any, keys: string[]): string {
     if (!obj) {
       return '';
@@ -195,9 +183,6 @@ export class DashboardComponent implements OnInit {
     );
   }
 
-  /**
-   * Aplatit la réponse API (racine + tous sous-objets JSON « simples »), ex. client → utilisateur → prénom.
-   */
   private flattenProfilePayload(u: any, depth = 0): Record<string, unknown> {
     if (depth > 12 || !this.isPlainRecord(u)) {
       return {};
@@ -211,7 +196,6 @@ export class DashboardComponent implements OnInit {
     return acc;
   }
 
-  /** Ouvre « Mon profil » et relance le chargement (utile après login ou si la première requête a échoué). */
   openProfilSection() {
     this.activeSection = 'profil';
     this.profileMenuOpen = false;
@@ -219,7 +203,6 @@ export class DashboardComponent implements OnInit {
     this.loadCurrentUser();
   }
 
-  /** Remplit prénom / nom à partir d’un champ « nom complet » si présent. */
   private applyNomCompletIfNeeded(u: Record<string, unknown>): void {
     if (this.prenomUtilisateur || this.nomFamilleUtilisateur) {
       return;
@@ -262,27 +245,15 @@ export class DashboardComponent implements OnInit {
 
     this.http.get<any>(url, { headers: this.getHeaders() }).subscribe({
       next: (raw) => {
+        this.profilExtra = raw;  // ← ADDED
         const u = this.flattenProfilePayload(raw);
         this.prenomUtilisateur = this.pickProfileField(u, [
-          'prenomUtil',
-          'prenom',
-          'prenomClient',
-          'firstName',
-          'prenomContact',
-          'prenom_util',
-          'prenomUtilisateur'
+          'prenomUtil', 'prenom', 'prenomClient', 'firstName',
+          'prenomContact', 'prenom_util', 'prenomUtilisateur'
         ]);
         this.nomFamilleUtilisateur = this.pickProfileField(u, [
-          'nomUtil',
-          'nom',
-          'nomClient',
-          'lastName',
-          'nomContact',
-          'nomFamille',
-          'nomDeFamille',
-          'nom_util',
-          'nomUtilisateur',
-          'nomFamilleUtil'
+          'nomUtil', 'nom', 'nomClient', 'lastName', 'nomContact',
+          'nomFamille', 'nomDeFamille', 'nom_util', 'nomUtilisateur', 'nomFamilleUtil'
         ]);
         this.applyNomCompletIfNeeded(u);
         if (!this.prenomUtilisateur) {
@@ -298,18 +269,9 @@ export class DashboardComponent implements OnInit {
         const email = this.pickProfileField(u, ['emailUtil', 'email', 'mail']) || this.emailUtilisateur;
         this.emailUtilisateur = email || this.emailUtilisateur;
         this.telUtilisateur = this.pickProfileField(u, [
-          'numTel',
-          'telephone',
-          'tel',
-          'phone',
-          'numeroTelephone',
-          'mobile',
-          'numTelephone',
-          'portable',
-          'gsm',
-          'telephoneMobile',
-          'telephonePortable',
-          'phoneNumber'
+          'numTel', 'telephone', 'tel', 'phone', 'numeroTelephone',
+          'mobile', 'numTelephone', 'portable', 'gsm',
+          'telephoneMobile', 'telephonePortable', 'phoneNumber'
         ]);
         if (!this.telUtilisateur) {
           this.telUtilisateur = this.pickProfileField(jwtPayload, ['phone_number', 'tel', 'telephone']);
@@ -373,7 +335,6 @@ export class DashboardComponent implements OnInit {
       this.demandeError = 'La description est obligatoire.';
       return;
     }
-
     if (this.demandeTypeSelectionne === 'REQUETE' && !d.typeRequete) {
       this.demandeError = 'Veuillez choisir un type de requête.';
       return;
@@ -413,16 +374,14 @@ export class DashboardComponent implements OnInit {
         error: onErr
       });
     } else if (this.demandeTypeSelectionne === 'RECLAMATION') {
-      this.reclamationService
-        .save({
-          description: d.description,
-          typeReclamation: d.typeReclamation,
-          niveauUrgence: d.niveauUrgence
-        })
-        .subscribe({
-          next: () => onDone('Réclamation soumise avec succès !'),
-          error: onErr
-        });
+      this.reclamationService.save({
+        description: d.description,
+        typeReclamation: d.typeReclamation,
+        niveauUrgence: d.niveauUrgence
+      }).subscribe({
+        next: () => onDone('Réclamation soumise avec succès !'),
+        error: onErr
+      });
     } else if (this.demandeTypeSelectionne === 'PROPOSITION') {
       this.propositionService.save({ description: d.description, typeProposition: d.typeProposition }).subscribe({
         next: () => onDone('Proposition soumise avec succès !'),
