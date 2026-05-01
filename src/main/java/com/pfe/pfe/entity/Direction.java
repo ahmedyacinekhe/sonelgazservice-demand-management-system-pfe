@@ -10,6 +10,7 @@ import lombok.Setter;
 
 public class Direction {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="id_direction")
     private int idDirection;
 

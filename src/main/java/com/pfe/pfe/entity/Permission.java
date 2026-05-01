@@ -10,6 +10,7 @@ import lombok.Setter;
 
 public class Permission {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="id_permission")
     private int idPermission;
 

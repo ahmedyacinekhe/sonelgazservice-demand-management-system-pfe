@@ -4,6 +4,7 @@ package com.pfe.pfe.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.pfe.pfe.entity.Utilisateur;
@@ -15,7 +16,7 @@ public class UtilisateurService {
     private UtilisateurRepository utilisateurRepository;
     
     public List<Utilisateur> findAll(){
-        return utilisateurRepository.findAll();
+        return utilisateurRepository.findAll(Sort.by(Sort.Direction.ASC, "idUtil"));
     }
 
 

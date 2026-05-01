@@ -13,6 +13,7 @@ import lombok.Setter;
 
 public class Metier {
   @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name="id_metier")
   private int idMetier;
 

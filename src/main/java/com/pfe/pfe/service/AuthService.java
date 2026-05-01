@@ -14,13 +14,18 @@ import com.pfe.pfe.dto.RegisterEmployeRequest;
 import com.pfe.pfe.entity.Client;
 import com.pfe.pfe.entity.Departement;
 import com.pfe.pfe.entity.Employe;
+import com.pfe.pfe.entity.Role;
+import com.pfe.pfe.entity.RoleUtilisateur;
+import com.pfe.pfe.entity.RoleUtilisateurId;
 import com.pfe.pfe.repository.ClientRepository;
 import com.pfe.pfe.repository.DepartementRepository;
 import com.pfe.pfe.repository.EmployeRepository;
+import com.pfe.pfe.repository.RoleRepository;
 import com.pfe.pfe.repository.RolePermissionRepository;
 import com.pfe.pfe.repository.RoleUtilisateurRepository;
 import com.pfe.pfe.repository.UtilisateurRepository;
 import com.pfe.pfe.security.JwtUtil;
+import jakarta.transaction.Transactional;
 
 @Service
 public class AuthService {
@@ -35,6 +40,8 @@ public class AuthService {
     private RoleUtilisateurRepository roleUtilisateurRepository;
     @Autowired
     private RolePermissionRepository rolePermissionRepository;
+    @Autowired
+    private RoleRepository roleRepository;
     @Autowired
     private ClientRepository clientRepository;
     @Autowired
@@ -78,6 +85,7 @@ public class AuthService {
         return new LoginResponse(token, role, permissions);
     }
 
+    @Transactional
     public String registerClient(RegisterClientRequest request) {
         if (utilisateurRepository.findByEmailUtil(request.getEmailUtil()).isPresent()) {
             throw new RuntimeException("Email déja utilisé !");
@@ -92,10 +100,12 @@ public class AuthService {
         client.setCodePostal(request.getCodePostal());
         client.setAdresseClient(request.getAdresseClient());
         client.setTypeClient(request.getTypeClient());
-        clientRepository.save(client);
+        Client savedClient = clientRepository.save(client);
+        assignRoleToUser(savedClient.getIdUtil(), "CLIENT");
         return "Compte Client crée avec succès !";
     }
 
+    @Transactional
     public String registerEmploye(RegisterEmployeRequest request) {
         if (utilisateurRepository.findByEmailUtil(request.getEmailUtil()).isPresent()) {
             throw new RuntimeException("Email déja utilisée !");
@@ -113,7 +123,28 @@ public class AuthService {
         Departement departement = departementRepository.findByNomDepartement(request.getNomDepartement())
             .orElseThrow(() -> new RuntimeException("Departement non trouvé !"));
         employe.setDepartement(departement);
-        employeRepository.save(employe);
+        Employe savedEmploye = employeRepository.save(employe);
+        assignRoleToUser(savedEmploye.getIdUtil(), "EMPLOYE");
         return "Compte Employe crée avec succès !";
+    }
+
+    private void assignRoleToUser(int idUtil, String nomRole) {
+        Role role = roleRepository.findByNomRoleIgnoreCase(nomRole)
+            .orElseGet(() -> {
+                Role newRole = new Role();
+                newRole.setNomRole(nomRole.toUpperCase());
+                newRole.setDescriptionRole("Role auto-cree pour inscription " + nomRole.toLowerCase());
+                return roleRepository.save(newRole);
+            });
+
+        RoleUtilisateurId roleUtilisateurId = new RoleUtilisateurId();
+        roleUtilisateurId.setIdUtil(idUtil);
+        roleUtilisateurId.setIdRole(role.getIdRole());
+
+        if (roleUtilisateurRepository.findById(roleUtilisateurId).isEmpty()) {
+            RoleUtilisateur roleUtilisateur = new RoleUtilisateur();
+            roleUtilisateur.setRoleUtilisateurId(roleUtilisateurId);
+            roleUtilisateurRepository.save(roleUtilisateur);
+        }
     }
 }

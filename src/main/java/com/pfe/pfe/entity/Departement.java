@@ -12,6 +12,7 @@ import lombok.Setter;
 
 public class Departement {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="id_departement")
     private int idDepartement;
 
