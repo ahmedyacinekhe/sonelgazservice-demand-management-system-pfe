@@ -58,6 +58,18 @@ export class DashboardAdminComponent implements OnInit {
   permissions: any[] = [];
   rolesUtilisateurs: any[] = [];
 
+  // RECHERCHE
+  rechercheUtilisateur = '';
+
+  utilisateursFiltres(): any[] {
+    const search = this.rechercheUtilisateur.toLowerCase().trim();
+    if (!search) return this.utilisateurs;
+    return this.utilisateurs.filter(u =>
+      (u.nomUtil    || '').toLowerCase().includes(search) ||
+      (u.prenomUtil || '').toLowerCase().includes(search)
+    );
+  }
+
   nouveauDepartement  = { nomDepartement: '', descriptionDepartement: '' };
   departementEdite: any = null;
   nouvellePermission  = { nomPermission: '', descriptionPermission: '' };
@@ -83,7 +95,6 @@ export class DashboardAdminComponent implements OnInit {
     this.loadAll();
     this.loadCurrentUser();
   }
-
   onAvatarError(event: any) {
     event.target.style.display = 'none';
   }

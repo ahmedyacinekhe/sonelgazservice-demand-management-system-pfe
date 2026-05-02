@@ -644,3 +644,33 @@ select.field-input option { background: #fff; color: #1a2e5c; }
   font-size: 14px;
   cursor: pointer;
 }
+/* SEARCH BAR */
+.search-bar-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  border: 1.5px solid #dde2ef;
+  border-radius: 8px;
+  padding: 8px 14px;
+  margin-bottom: 16px;
+  max-width: 420px;
+  transition: border-color 0.2s;
+}
+.search-bar-box:focus-within {
+  border-color: #de7b3b;
+  box-shadow: 0 0 0 3px rgba(222,123,59,0.1);
+}
+.search-icon  { font-size: 1rem; color: #aaa; flex-shrink: 0; }
+.search-input {
+  flex: 1; border: none; outline: none;
+  font-size: 0.87rem; color: #1a2e5c;
+  background: transparent; font-family: inherit;
+}
+.search-input::placeholder { color: #bbb; }
+.search-clear {
+  background: transparent; border: none;
+  color: #aaa; cursor: pointer; font-size: 0.9rem;
+  padding: 0 2px; transition: color 0.2s; flex-shrink: 0;
+}
+.search-clear:hover { color: #c62828; }
