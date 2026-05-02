@@ -674,3 +674,9 @@ select.field-input option { background: #fff; color: #1a2e5c; }
   padding: 0 2px; transition: color 0.2s; flex-shrink: 0;
 }
 .search-clear:hover { color: #c62828; }
+.btn-info {
+  background: rgba(23,162,184,0.1);
+  color: #117a8b;
+  border: 1px solid rgba(23,162,184,0.4);
+}
+.btn-info:hover { background: rgba(23,162,184,0.2); }

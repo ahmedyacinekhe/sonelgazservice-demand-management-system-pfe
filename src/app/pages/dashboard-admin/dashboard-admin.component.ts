@@ -81,6 +81,22 @@ export class DashboardAdminComponent implements OnInit {
 
   nouveauDepartement = { nomDepartement: '', nombreEmployes: 0 };
   departementEdite: any = null;
+  departementSelectionne: any = null;
+employesDepartement: any[] = [];
+
+voirEmployesDepartement(d: any) {
+  this.departementSelectionne = d;
+  this.http.get<any[]>(`${this.baseUrl}/Api/employes/departement/${d.idDepartement}`, { headers: this.getHeaders() })
+    .subscribe({
+      next: (data) => this.employesDepartement = data,
+      error: () => this.employesDepartement = []
+    });
+}
+
+fermerEmployesDepartement() {
+  this.departementSelectionne = null;
+  this.employesDepartement = [];
+}
   nouvellePermission  = { nomPermission: '', descriptionPermission: '' };
   permissionEditee: any = null;
   nouveauRole         = { nomRole: '', descriptionRole: '' };
