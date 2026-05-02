@@ -69,8 +69,17 @@ export class DashboardAdminComponent implements OnInit {
       (u.prenomUtil || '').toLowerCase().includes(search)
     );
   }
+  rechercheDepartement = '';
 
-  nouveauDepartement  = { nomDepartement: '', descriptionDepartement: '' };
+  departementsFiltres(): any[] {
+    const search = this.rechercheDepartement.toLowerCase().trim();
+    if (!search) return this.departements;
+    return this.departements.filter(d =>
+      (d.nomDepartement || '').toLowerCase().includes(search)
+    );
+  }
+
+  nouveauDepartement = { nomDepartement: '', nombreEmployes: 0 };
   departementEdite: any = null;
   nouvellePermission  = { nomPermission: '', descriptionPermission: '' };
   permissionEditee: any = null;
@@ -95,6 +104,7 @@ export class DashboardAdminComponent implements OnInit {
     this.loadAll();
     this.loadCurrentUser();
   }
+
   onAvatarError(event: any) {
     event.target.style.display = 'none';
   }
@@ -272,9 +282,12 @@ export class DashboardAdminComponent implements OnInit {
       .subscribe({ next: (d) => this.utilisateurs = d, error: () => {} });
   }
   loadDepartements() {
-    this.http.get<any[]>(`${this.baseUrl}/Api/departements`, { headers: this.getHeaders() })
-      .subscribe({ next: (d) => this.departements = d, error: () => {} });
-  }
+  this.http.get<any[]>(`${this.baseUrl}/Api/departements`, { headers: this.getHeaders() })
+    .subscribe({ 
+      next: (d) => this.departements = d.sort((a, b) => a.idDepartement - b.idDepartement), 
+      error: () => {} 
+    });
+}
   loadRoles() {
     this.http.get<any[]>(`${this.baseUrl}/Api/roles`, { headers: this.getHeaders() })
       .subscribe({ next: (d) => this.roles = d, error: () => {} });
@@ -335,11 +348,13 @@ export class DashboardAdminComponent implements OnInit {
         .subscribe({ next: () => this.loadUtilisateurs(), error: () => {} });
     }
   }
+
   toggleEtatCompte(u: any) {
     const etat = u.etatCompte === 'ACTIF' ? 'INACTIF' : 'ACTIF';
     this.http.put(`${this.baseUrl}/Api/utilisateurs/${u.idUtil}`, { ...u, etatCompte: etat }, { headers: this.getHeaders() })
       .subscribe({ next: () => this.loadUtilisateurs(), error: () => {} });
   }
+
   affecterRole() {
     if (!this.affectation.idUtil || !this.affectation.idRole) { alert('Choisissez utilisateur et rôle !'); return; }
     this.http.post(`${this.baseUrl}/Api/rolesUtilisateurs`,
@@ -347,48 +362,60 @@ export class DashboardAdminComponent implements OnInit {
       { headers: this.getHeaders() })
       .subscribe({ next: () => { alert('Rôle affecté !'); this.loadRolesUtilisateurs(); this.affectation = { idUtil: 0, idRole: 0 }; }, error: () => {} });
   }
+
   saveDepartement() {
     if (!this.nouveauDepartement.nomDepartement) { alert('Nom requis !'); return; }
     this.http.post(`${this.baseUrl}/Api/departements`, this.nouveauDepartement, { headers: this.getHeaders() })
-      .subscribe({ next: () => { this.nouveauDepartement = { nomDepartement: '', descriptionDepartement: '' }; this.loadDepartements(); }, error: () => {} });
+      .subscribe({ next: () => { this.nouveauDepartement = { nomDepartement: '', nombreEmployes: 0 }; this.loadDepartements(); }, error: () => {} });
   }
-  editerDepartement(d: any)  { this.departementEdite = { ...d }; }
+
+  editerDepartement(d: any) { this.departementEdite = { ...d }; }
+
   updateDepartement() {
     this.http.put(`${this.baseUrl}/Api/departements/${this.departementEdite.idDepartement}`, this.departementEdite, { headers: this.getHeaders() })
       .subscribe({ next: () => { this.departementEdite = null; this.loadDepartements(); }, error: () => {} });
   }
+
   supprimerDepartement(id: number) {
     if (confirm('Supprimer ?')) {
       this.http.delete(`${this.baseUrl}/Api/departements/${id}`, { headers: this.getHeaders() })
         .subscribe({ next: () => this.loadDepartements(), error: () => {} });
     }
   }
+
   savePermission() {
     if (!this.nouvellePermission.nomPermission) { alert('Nom requis !'); return; }
     this.http.post(`${this.baseUrl}/Api/permissions`, this.nouvellePermission, { headers: this.getHeaders() })
       .subscribe({ next: () => { this.nouvellePermission = { nomPermission: '', descriptionPermission: '' }; this.loadPermissions(); }, error: () => {} });
   }
-  editerPermission(p: any)   { this.permissionEditee = { ...p }; }
+
+  editerPermission(p: any) { this.permissionEditee = { ...p }; }
+
   updatePermission() {
     this.http.put(`${this.baseUrl}/Api/permissions/${this.permissionEditee.idPermission}`, this.permissionEditee, { headers: this.getHeaders() })
       .subscribe({ next: () => { this.permissionEditee = null; this.loadPermissions(); }, error: () => {} });
   }
+
   supprimerPermission(id: number) {
     if (confirm('Supprimer ?')) {
       this.http.delete(`${this.baseUrl}/Api/permissions/${id}`, { headers: this.getHeaders() })
         .subscribe({ next: () => this.loadPermissions(), error: () => {} });
     }
   }
+
   saveRole() {
     if (!this.nouveauRole.nomRole) { alert('Nom requis !'); return; }
     this.http.post(`${this.baseUrl}/Api/roles`, this.nouveauRole, { headers: this.getHeaders() })
       .subscribe({ next: () => { this.nouveauRole = { nomRole: '', descriptionRole: '' }; this.loadRoles(); }, error: () => {} });
   }
+
   editerRole(r: any) { this.roleEdite = { ...r }; }
+
   updateRole() {
     this.http.put(`${this.baseUrl}/Api/roles/${this.roleEdite.idRole}`, this.roleEdite, { headers: this.getHeaders() })
       .subscribe({ next: () => { this.roleEdite = null; this.loadRoles(); }, error: () => {} });
   }
+
   supprimerRole(id: number) {
     if (confirm('Supprimer ?')) {
       this.http.delete(`${this.baseUrl}/Api/roles/${id}`, { headers: this.getHeaders() })
