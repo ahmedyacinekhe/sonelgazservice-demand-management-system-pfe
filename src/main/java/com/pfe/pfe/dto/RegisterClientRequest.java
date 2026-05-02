@@ -9,7 +9,7 @@ public class RegisterClientRequest {
 
     private String nomUtil ;
     private String prenomUtil ;
-    private int numTel ;
+    private long numTel;
     private String emailUtil ;
     private String motDePasse ;
 

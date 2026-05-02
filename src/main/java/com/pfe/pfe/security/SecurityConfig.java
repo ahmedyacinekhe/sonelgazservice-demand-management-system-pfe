@@ -36,13 +36,15 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/auth/login",
-                                "/auth/register/client",
-                                "/auth/register/employe"
-                        ).permitAll()
-                        .anyRequest().authenticated()
-                )
+    .requestMatchers(
+        "/auth/login",
+        "/auth/register/client",
+        "/auth/register/employe",
+        "/Api/departements",
+        "/Api/departements/**"
+    ).permitAll()
+    .anyRequest().authenticated()
+)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

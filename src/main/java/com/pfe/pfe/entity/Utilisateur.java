@@ -22,7 +22,7 @@ public class Utilisateur {
     private String nomUtil;
 
       @Column(name="num_tel")
-    private int numTel;
+    private long numTel;
 
       @Column(name="email_util")
     private String emailUtil;
