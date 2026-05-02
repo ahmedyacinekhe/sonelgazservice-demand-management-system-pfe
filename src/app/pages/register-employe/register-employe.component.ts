@@ -28,12 +28,25 @@ export class RegisterEmployeComponent {
   errorMessage = '';
   successMessage = '';
   loading = false;
-  currentYear = new Date().getFullYear(); // ← AJOUTÉ
+  currentYear = new Date().getFullYear();
 
   constructor(private http: HttpClient, private router: Router) {}
 
+  hasUpper(pwd: string): boolean { return /[A-Z]/.test(pwd); }
+  hasDigit(pwd: string): boolean { return /\d/.test(pwd); }
+  hasSpecial(pwd: string): boolean { return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd); }
+
   register() {
-    if (this.employe.motDePasse !== this.confirmerMotDePasse) {
+    const pwd = this.employe.motDePasse;
+
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,12}$/;
+
+    if (!passwordRegex.test(pwd)) {
+      this.errorMessage = 'Le mot de passe doit contenir 8 à 12 caractères, au moins une majuscule, un chiffre et un caractère spécial.';
+      return;
+    }
+
+    if (pwd !== this.confirmerMotDePasse) {
       this.errorMessage = 'Les mots de passe ne correspondent pas !';
       return;
     }

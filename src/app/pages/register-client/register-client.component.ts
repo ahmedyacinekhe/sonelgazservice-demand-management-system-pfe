@@ -39,28 +39,41 @@ export class RegisterClientComponent {
     }, 100);
   }
 
+      hasUpper(pwd: string): boolean { return /[A-Z]/.test(pwd); }
+  hasDigit(pwd: string): boolean { return /\d/.test(pwd); }
+  hasSpecial(pwd: string): boolean { return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd); }
+
   register() {
-    if (this.client.motDePasse !== this.confirmerMotDePasse) {
-      this.errorMessage = 'Les mots de passe ne correspondent pas !';
-      return;
-    }
+  const pwd = this.client.motDePasse;
 
-    this.loading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
+  const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,12}$/;
 
-    this.http.post('http://localhost:8082/auth/register/client', this.client,
-      { responseType: 'text' }
-    ).subscribe({
-      next: (_response) => {
-        this.successMessage = 'Compte créé avec succès !';
-        this.loading = false;
-        setTimeout(() => this.router.navigate(['/login']), 2000);
-      },
-      error: (_err) => {
-        this.errorMessage = 'Erreur lors de la création du compte !';
-        this.loading = false;
-      }
-    });
+  if (!passwordRegex.test(pwd)) {
+    this.errorMessage = 'Le mot de passe doit contenir 8 à 12 caractères, au moins une majuscule, un chiffre et un caractère spécial.';
+    return;
   }
+
+  if (pwd !== this.confirmerMotDePasse) {
+    this.errorMessage = 'Les mots de passe ne correspondent pas !';
+    return;
+  }
+
+  this.loading = true;
+  this.errorMessage = '';
+  this.successMessage = '';
+
+  this.http.post('http://localhost:8082/auth/register/client', this.client,
+    { responseType: 'text' }
+  ).subscribe({
+    next: (_response) => {
+      this.successMessage = 'Compte créé avec succès !';
+      this.loading = false;
+      setTimeout(() => this.router.navigate(['/login']), 2000);
+    },
+    error: (_err) => {
+      this.errorMessage = 'Erreur lors de la création du compte !';
+      this.loading = false;
+    }
+  });
+}
 }
