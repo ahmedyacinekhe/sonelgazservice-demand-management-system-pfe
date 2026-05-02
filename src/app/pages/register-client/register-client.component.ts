@@ -39,7 +39,7 @@ onCountryChange() {
 
 onPhoneChange() {
   const digits = this.phoneNumber.replace(/\D/g, '');
-  this.client.numTel = parseInt(this.selectedCountry.dialCode.replace('+', '') + digits) || 0;
+  this.client.numTel = Number(this.selectedCountry.dialCode.replace('+', '') + digits) || 0;
 }
 
 isPhoneValid(): boolean {
@@ -51,7 +51,7 @@ isPhoneValid(): boolean {
     prenomUtil: '',
     emailUtil: '',
     motDePasse: '',
-    numTel: 0,
+    numTel: 0 as number,
     codePostal: 0,
     adresseClient: '',
     typeClient: ''
