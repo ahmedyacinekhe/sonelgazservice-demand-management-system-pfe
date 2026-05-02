@@ -25,6 +25,10 @@ public class EmployeController {
     public List<Employe> findAll(){
         return employeService.findAll();
     }
+    @GetMapping("/departement/{idDepartement}")
+public List<Employe> findByDepartement(@PathVariable int idDepartement) {
+    return employeService.findByDepartement(idDepartement);
+}
 
     @GetMapping("/{id}")
     public Employe findById(@PathVariable int id ){

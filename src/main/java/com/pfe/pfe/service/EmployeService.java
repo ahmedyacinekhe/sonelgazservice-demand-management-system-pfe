@@ -17,6 +17,9 @@ public class EmployeService {
     public List<Employe> findAll(){
         return employeRepository.findAll();
     }
+    public List<Employe> findByDepartement(int idDepartement) {
+    return employeRepository.findByDepartement_IdDepartement(idDepartement);
+}
 
     public Employe findById(int id){
         return employeRepository.findById(id).orElse(null);
