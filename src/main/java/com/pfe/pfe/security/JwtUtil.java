@@ -35,14 +35,15 @@ public class JwtUtil {
     } 
 
 
-    public String genererToken(String email){
-        return Jwts.builder()
+    public String genererToken(String email, String role) {
+    return Jwts.builder()
         .setSubject(email)
+        .claim("role", role)
         .setIssuedAt(new Date())
         .setExpiration(new Date(System.currentTimeMillis() + dateExpiration))
         .signWith(SignatureAlgorithm.HS256, secretKey)
         .compact();
-    }
+}
       
 
 

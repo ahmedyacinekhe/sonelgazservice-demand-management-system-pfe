@@ -56,19 +56,23 @@ public class AuthService {
             new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        String token = jwtUtil.genererToken(request.getEmail());
-
+        // 1. D'abord récupérer l'utilisateur
         var utilisateur = utilisateurRepository.findByEmailUtil(request.getEmail())
             .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
+        // 2. Récupérer ses rôles
         List<String> roles = roleUtilisateurRepository
             .findByRoleUtilisateurId_IdUtil(utilisateur.getIdUtil())
             .stream()
             .map(ru -> ru.getRole().getNomRole())
             .collect(java.util.stream.Collectors.toList());
 
-        String role = roles.isEmpty() ? "" : roles.get(0);
+        String role = roles.isEmpty() ? "USER" : roles.get(0);
 
+        // 3. Générer le token AVEC le rôle
+        String token = jwtUtil.genererToken(request.getEmail(), role);
+
+        // 4. Récupérer les permissions
         int idRole = roleUtilisateurRepository
             .findByRoleUtilisateurId_IdUtil(utilisateur.getIdUtil())
             .stream()
@@ -124,6 +128,8 @@ public class AuthService {
             .orElseThrow(() -> new RuntimeException("Departement non trouvé !"));
         employe.setDepartement(departement);
         Employe savedEmploye = employeRepository.save(employe);
+        departement.setNombreEmployes(departement.getNombreEmployes() + 1);
+        departementRepository.save(departement);
         assignRoleToUser(savedEmploye.getIdUtil(), "EMPLOYE");
         return "Compte Employe crée avec succès !";
     }
