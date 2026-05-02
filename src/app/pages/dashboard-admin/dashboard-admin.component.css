@@ -680,3 +680,22 @@ select.field-input option { background: #fff; color: #1a2e5c; }
   border: 1px solid rgba(23,162,184,0.4);
 }
 .btn-info:hover { background: rgba(23,162,184,0.2); }
+.affectation-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: #fff; border: 1px solid #ccc;
+  border-radius: 6px; max-height: 220px;
+  overflow-y: auto; z-index: 200;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.affectation-option {
+  padding: 10px 14px; font-size: 0.88rem;
+  color: #1a2e5c; cursor: pointer;
+}
+
+.affectation-option:hover { background: #f0f4ff; }
+
+.affectation-empty {
+  padding: 10px 14px; font-size: 0.85rem;
+  color: #aaa; text-align: center;
+}

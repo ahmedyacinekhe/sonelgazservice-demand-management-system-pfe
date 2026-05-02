@@ -78,6 +78,23 @@ export class DashboardAdminComponent implements OnInit {
       (d.nomDepartement || '').toLowerCase().includes(search)
     );
   }
+  rechercheAffectation = '';
+showAffectationDropdown = false;
+
+utilisateursFiltresAffectation(): any[] {
+  const s = this.rechercheAffectation.toLowerCase().trim();
+  if (!s) return this.utilisateurs;
+  return this.utilisateurs.filter(u =>
+    (u.nomUtil || '').toLowerCase().includes(s) ||
+    (u.prenomUtil || '').toLowerCase().includes(s)
+  );
+}
+
+selectUtilisateurAffectation(u: any) {
+  this.affectation.idUtil = u.idUtil;
+  this.rechercheAffectation = `${u.prenomUtil} ${u.nomUtil}`;
+  this.showAffectationDropdown = false;
+}
 
   nouveauDepartement = { nomDepartement: '', nombreEmployes: 0 };
   departementEdite: any = null;
