@@ -221,3 +221,26 @@ select.field-input option { background: #ffffff; color: #1a2e5c; }
   .top-nav { padding: 14px 24px; }
   .row-2 { grid-template-columns: 1fr; }
 }
+.phone-input-row {
+  display: flex; gap: 8px;
+}
+
+.phone-prefix-select {
+  width: 110px; padding: 11px 8px;
+  background: #fff; border: 1px solid #ccc;
+  border-radius: 6px; color: #1a2e5c;
+  font-size: 0.88rem; outline: none;
+  cursor: pointer; font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.phone-prefix-select:focus {
+  border-color: #de7b3b;
+  box-shadow: 0 0 0 3px rgba(222,123,59,0.15);
+}
+
+.phone-number-input { flex: 1; }
+
+.phone-hint {
+  font-size: 0.75rem; color: #888; margin-top: 4px; display: block;
+}

@@ -68,10 +68,18 @@
 
         <div class="row-2">
           <div class="field-group">
-            <label>Téléphone</label>
-            <input type="text" class="field-input" placeholder="Téléphone"
-                   [(ngModel)]="employe.numTel"/>
-          </div>
+  <label>Téléphone</label>
+  <div class="phone-input-row">
+    <select class="phone-prefix-select" [(ngModel)]="selectedCountry" (ngModelChange)="onCountryChange()">
+      <option *ngFor="let c of countries" [ngValue]="c">{{ c.flag }} {{ c.dialCode }}</option>
+    </select>
+    <input type="text" class="field-input phone-number-input"
+           [placeholder]="selectedCountry.placeholder"
+           [(ngModel)]="phoneNumber"
+           (ngModelChange)="onPhoneChange()"/>
+  </div>
+  <span class="phone-hint">{{ selectedCountry.digits }} chiffres attendus</span>
+</div>
           <div class="field-group">
             <label>Matricule <span class="req">*</span></label>
             <input type="text" class="field-input" placeholder="Matricule"
