@@ -95,6 +95,16 @@ selectUtilisateurAffectation(u: any) {
   this.rechercheAffectation = `${u.prenomUtil} ${u.nomUtil}`;
   this.showAffectationDropdown = false;
 }
+onRoleAffectationChange() {
+  this.affectation.idDepartement = 0;
+}
+
+affectationNecessiteDepartement(): boolean {
+  const role = this.roles.find(r => Number(r.idRole) === Number(this.affectation.idRole));
+  if (!role) return false;
+  const nom = role.nomRole.toUpperCase();
+  return nom === 'EMPLOYE' || nom === 'RESPONSABLE';
+}
 
   nouveauDepartement = { nomDepartement: '', nombreEmployes: 0 };
   departementEdite: any = null;
@@ -103,9 +113,15 @@ employesDepartement: any[] = [];
 
 voirEmployesDepartement(d: any) {
   this.departementSelectionne = d;
-  this.http.get<any[]>(`${this.baseUrl}/Api/employes/departement/${d.idDepartement}`, { headers: this.getHeaders() })
+  this.http.get<any[]>(`${this.baseUrl}/Api/employes/departement/${d.idDepartement}`, 
+    { headers: this.getHeaders() })
     .subscribe({
-      next: (data) => this.employesDepartement = data,
+      next: (data) => {
+        this.employesDepartement = data.filter(e => {
+          const role = this.getRoleUtilisateur(e.idUtil);
+          return role !== 'CLIENT';
+        });
+      },
       error: () => this.employesDepartement = []
     });
 }
@@ -118,7 +134,7 @@ fermerEmployesDepartement() {
   permissionEditee: any = null;
   nouveauRole         = { nomRole: '', descriptionRole: '' };
   roleEdite: any      = null;
-  affectation         = { idUtil: 0, idRole: 0 };
+  affectation         = { idUtil: 0, idRole: 0, idDepartement: 0 };
 
   permissionsRole: { [idRole: number]: number[] } = {};
   nouvellePermissionRole: number[] = [];
@@ -389,12 +405,63 @@ fermerEmployesDepartement() {
   }
 
   affecterRole() {
-    if (!this.affectation.idUtil || !this.affectation.idRole) { alert('Choisissez utilisateur et rôle !'); return; }
-    this.http.post(`${this.baseUrl}/Api/rolesUtilisateurs`,
-      { roleUtilisateurId: { idUtil: this.affectation.idUtil, idRole: this.affectation.idRole } },
-      { headers: this.getHeaders() })
-      .subscribe({ next: () => { alert('Rôle affecté !'); this.loadRolesUtilisateurs(); this.affectation = { idUtil: 0, idRole: 0 }; }, error: () => {} });
+  if (!this.affectation.idUtil || !this.affectation.idRole) {
+    alert('Choisissez utilisateur et rôle !');
+    return;
   }
+
+  const roleSelectionne = this.roles.find(r => Number(r.idRole) === Number(this.affectation.idRole));
+  const nomRole = roleSelectionne ? roleSelectionne.nomRole : '';
+  const necessiteDepartement = nomRole.toUpperCase() === 'EMPLOYE' || nomRole.toUpperCase() === 'RESPONSABLE';
+
+  if (necessiteDepartement && !this.affectation.idDepartement) {
+    alert('Veuillez choisir un département pour ce rôle !');
+    return;
+  }
+
+  const idUtil = this.affectation.idUtil;
+  const idRole = this.affectation.idRole;
+  const idDepartement = this.affectation.idDepartement;
+
+  this.http.delete(
+    `${this.baseUrl}/Api/rolesUtilisateurs/utilisateur/${idUtil}`,
+    { headers: this.getHeaders() }
+  ).subscribe({
+    next: () => {
+      this.http.post(
+        `${this.baseUrl}/Api/rolesUtilisateurs`,
+        { roleUtilisateurId: { idUtil, idRole } },
+        { headers: this.getHeaders() }
+      ).subscribe({
+        next: () => {
+          // Convertir l'utilisateur dans la bonne table
+          this.http.put(
+            `${this.baseUrl}/Api/utilisateurs/${idUtil}/convertir?nouveauRole=${nomRole}&idDepartement=${idDepartement}`,
+            {},
+            { headers: this.getHeaders() }
+          ).subscribe({
+            next: () => {
+              console.log('✅ Conversion réussie');
+              this.loadAll();
+              if (this.departementSelectionne) {
+                setTimeout(() => this.voirEmployesDepartement(this.departementSelectionne), 500);
+              }
+              alert('Rôle affecté avec succès !');
+              this.affectation = { idUtil: 0, idRole: 0, idDepartement: 0 };
+              this.rechercheAffectation = '';
+            },
+            error: (err) => {
+              console.error('❌ Erreur conversion:', err);
+              alert('Rôle affecté mais erreur lors de la conversion !');
+            }
+          });
+        },
+        error: () => alert('Erreur lors de l\'affectation du rôle.')
+      });
+    },
+    error: () => alert('Erreur lors de la suppression de l\'ancien rôle.')
+  });
+}
 
   saveDepartement() {
     if (!this.nouveauDepartement.nomDepartement) { alert('Nom requis !'); return; }
