@@ -51,43 +51,51 @@ public class AuthService {
     @Autowired
     private DepartementRepository departementRepository;
 
-    public LoginResponse login(LoginRequest request) {
+  public LoginResponse login(LoginRequest request) {
+    // Vérifier d'abord si le compte existe et son état
+    var utilisateur = utilisateurRepository.findByEmailUtil(request.getEmail())
+        .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+            org.springframework.http.HttpStatus.UNAUTHORIZED, "Email ou mot de passe incorrect"));
+
+    System.out.println("🔍 ETAT COMPTE: " + utilisateur.getEtatCompte());
+
+    if ("INACTIF".equals(utilisateur.getEtatCompte())) {
+    return new LoginResponse("COMPTE_INACTIF");
+}
+
+    try {
         authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
-
-        // 1. D'abord récupérer l'utilisateur
-        var utilisateur = utilisateurRepository.findByEmailUtil(request.getEmail())
-            .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-
-        // 2. Récupérer ses rôles
-        List<String> roles = roleUtilisateurRepository
-            .findByRoleUtilisateurId_IdUtil(utilisateur.getIdUtil())
-            .stream()
-            .map(ru -> ru.getRole().getNomRole())
-            .collect(java.util.stream.Collectors.toList());
-
-        String role = roles.isEmpty() ? "USER" : roles.get(0);
-
-        // 3. Générer le token AVEC le rôle
-        String token = jwtUtil.genererToken(request.getEmail(), role);
-
-        // 4. Récupérer les permissions
-        int idRole = roleUtilisateurRepository
-            .findByRoleUtilisateurId_IdUtil(utilisateur.getIdUtil())
-            .stream()
-            .findFirst()
-            .map(ru -> ru.getRole().getIdRole())
-            .orElse(0);
-
-        List<String> permissions = rolePermissionRepository
-            .findByRolePermissionId_IdRole(idRole)
-            .stream()
-            .map(rp -> rp.getPermission().getNomPermission())
-            .collect(java.util.stream.Collectors.toList());
-
-        return new LoginResponse(token, role, permissions);
+    } catch (Exception e) {
+        throw new org.springframework.web.server.ResponseStatusException(
+            org.springframework.http.HttpStatus.UNAUTHORIZED, "Email ou mot de passe incorrect");
     }
+
+    List<String> roles = roleUtilisateurRepository
+        .findByRoleUtilisateurId_IdUtil(utilisateur.getIdUtil())
+        .stream()
+        .map(ru -> ru.getRole().getNomRole())
+        .collect(java.util.stream.Collectors.toList());
+
+    String role = roles.isEmpty() ? "USER" : roles.get(0);
+    String token = jwtUtil.genererToken(request.getEmail(), role);
+
+    int idRole = roleUtilisateurRepository
+        .findByRoleUtilisateurId_IdUtil(utilisateur.getIdUtil())
+        .stream()
+        .findFirst()
+        .map(ru -> ru.getRole().getIdRole())
+        .orElse(0);
+
+    List<String> permissions = rolePermissionRepository
+        .findByRolePermissionId_IdRole(idRole)
+        .stream()
+        .map(rp -> rp.getPermission().getNomPermission())
+        .collect(java.util.stream.Collectors.toList());
+
+    return new LoginResponse(token, role, permissions);
+}
 
     @Transactional
     public String registerClient(RegisterClientRequest request) {

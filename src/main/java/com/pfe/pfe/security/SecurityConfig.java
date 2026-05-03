@@ -34,8 +34,17 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
+        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+.exceptionHandling(ex -> ex
+    .authenticationEntryPoint((request, response, authException) -> {
+        if (authException instanceof org.springframework.security.authentication.DisabledException) {
+            response.setStatus(403);
+        } else {
+            response.setStatus(401);
+        }
+    })
+)
+.authorizeHttpRequests(auth -> auth
     .requestMatchers(
         "/auth/login",
         "/auth/register/client",
@@ -48,6 +57,7 @@ public class SecurityConfig {
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+        
     }
 
     @Bean

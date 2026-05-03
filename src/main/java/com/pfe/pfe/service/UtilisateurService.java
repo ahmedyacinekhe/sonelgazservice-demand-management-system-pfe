@@ -140,4 +140,12 @@ public void deleteById(int id) {
     entityManager.createNativeQuery("DELETE FROM utilisateur WHERE id_util = :id")
         .setParameter("id", id).executeUpdate();
 }
+
+@Transactional
+public void updateEtat(int id, String etat) {
+    entityManager.createNativeQuery("UPDATE utilisateur SET etat_compte = :etat WHERE id_util = :id")
+        .setParameter("etat", etat)
+        .setParameter("id", id)
+        .executeUpdate();
+}
 }

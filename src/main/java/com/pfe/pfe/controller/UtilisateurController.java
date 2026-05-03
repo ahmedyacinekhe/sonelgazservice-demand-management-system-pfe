@@ -41,10 +41,10 @@ public void convertirUtilisateur(@PathVariable int id,
         return utilisateurService.save(utilisateur);
     }
 
-    @PutMapping("/{id}")
-    public Utilisateur  update(@PathVariable int id, @RequestBody Utilisateur utilisateur){
-        return utilisateurService.save(utilisateur);
-    }
+    @PutMapping("/{id}/etat")
+public void updateEtat(@PathVariable int id, @RequestParam String etat) {
+    utilisateurService.updateEtat(id, etat);
+}
 
     @DeleteMapping("/{id}")
     public void deleteById(@PathVariable int id){
