@@ -59,6 +59,15 @@ export class DashboardAdminComponent implements OnInit {
   rolesUtilisateurs: any[] = [];
 
   // RECHERCHE
+  recherchePermission = '';
+
+permissionsFiltres(): any[] {
+  const search = this.recherchePermission.toLowerCase().trim();
+  if (!search) return this.permissions;
+  return this.permissions.filter(p =>
+    (p.nomPermission || '').toLowerCase().includes(search)
+  );
+}
   rechercheUtilisateur = '';
 
   utilisateursFiltres(): any[] {
