@@ -44,7 +44,7 @@ private RoleUtilisateurRepository roleUtilisateurRepository;
         System.out.println("🔍 convertirUtilisateur appelé: idUtil=" + idUtil + ", role=" + nouveauRole + ", dept=" + idDepartement);
         String nomRole = nouveauRole.toUpperCase();
 
-        if (nomRole.equals("EMPLOYE") || nomRole.equals("RESPONSABLE")) {
+        if (nomRole.equals("EMPLOYE") || nomRole.equals("RESPONSABLE") || nomRole.equals("ADMIN")) {
             // Vérifier si c'est un client
             Long countClient = (Long) entityManager
                 .createNativeQuery("SELECT COUNT(*) FROM client WHERE id_util = :id")
