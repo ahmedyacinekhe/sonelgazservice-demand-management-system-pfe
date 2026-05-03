@@ -103,7 +103,7 @@ affectationNecessiteDepartement(): boolean {
   const role = this.roles.find(r => Number(r.idRole) === Number(this.affectation.idRole));
   if (!role) return false;
   const nom = role.nomRole.toUpperCase();
-  return nom === 'EMPLOYE' || nom === 'RESPONSABLE';
+  return nom === 'EMPLOYE' || nom === 'RESPONSABLE' || nom === 'ADMIN';
 }
 
   nouveauDepartement = { nomDepartement: '', nombreEmployes: 0 };
