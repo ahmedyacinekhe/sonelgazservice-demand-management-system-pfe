@@ -1,7 +1,7 @@
 package com.pfe.pfe.controller;
 
 import java.util.List;
-
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,7 +30,12 @@ public class UtilisateurController {
     public Utilisateur findById(@PathVariable int id){
         return utilisateurService.findById(id);
     }
-
+     @PutMapping("/{id}/convertir")
+public void convertirUtilisateur(@PathVariable int id,
+                                  @RequestParam String nouveauRole,
+                                  @RequestParam(defaultValue = "0") int idDepartement) {
+    utilisateurService.convertirUtilisateur(id, nouveauRole, idDepartement);
+}
     @PostMapping
     public Utilisateur save(@RequestBody Utilisateur utilisateur){
         return utilisateurService.save(utilisateur);

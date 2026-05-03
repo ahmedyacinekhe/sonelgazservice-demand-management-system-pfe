@@ -29,7 +29,10 @@ public class EmployeController {
 public List<Employe> findByDepartement(@PathVariable int idDepartement) {
     return employeService.findByDepartement(idDepartement);
 }
-
+    @PutMapping("/{id}/departement/{idDepartement}")
+public void changerDepartement(@PathVariable int id, @PathVariable int idDepartement) {
+    employeService.changerDepartement(id, idDepartement);
+}
     @GetMapping("/{id}")
     public Employe findById(@PathVariable int id ){
         return employeService.findById(id);

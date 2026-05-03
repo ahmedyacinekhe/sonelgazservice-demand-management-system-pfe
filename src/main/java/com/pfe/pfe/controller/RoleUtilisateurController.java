@@ -30,11 +30,15 @@ public class RoleUtilisateurController {
     public RoleUtilisateur findById(@PathVariable RoleUtilisateurId  id){
          return roleUtilisateurService.findById(id);
     } 
+
     @PostMapping
     public RoleUtilisateur save(@RequestBody RoleUtilisateur roleEmploye){
         return roleUtilisateurService.save(roleEmploye);
     }
-
+@DeleteMapping("/utilisateur/{idUtil}")
+public void deleteByIdUtil(@PathVariable int idUtil) {
+    roleUtilisateurService.deleteByIdUtil(idUtil);
+}
     @PutMapping("/{id}")
     public RoleUtilisateur update(@PathVariable RoleUtilisateurId id, @RequestBody RoleUtilisateur roleUtilisateur){
        return roleUtilisateurService.save(roleUtilisateur);

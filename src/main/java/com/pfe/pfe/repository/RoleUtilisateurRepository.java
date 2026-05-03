@@ -7,7 +7,11 @@ import org.springframework.stereotype.Repository;
 
 import com.pfe.pfe.entity.RoleUtilisateur;
 import com.pfe.pfe.entity.RoleUtilisateurId;
+
+import jakarta.transaction.Transactional;
 @Repository
 public interface RoleUtilisateurRepository extends JpaRepository<RoleUtilisateur,RoleUtilisateurId> {
 List<RoleUtilisateur> findByRoleUtilisateurId_IdUtil(int id);
+@Transactional
+void deleteByRoleUtilisateurId_IdUtil(int idUtil);
 }
