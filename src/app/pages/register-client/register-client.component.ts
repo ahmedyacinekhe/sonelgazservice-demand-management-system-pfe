@@ -61,6 +61,8 @@ isPhoneValid(): boolean {
   errorMessage = '';
   successMessage = '';
   loading = false;
+  showPassword = false;
+  showConfirm = false;
   currentYear = new Date().getFullYear(); // ← AJOUTÉ
 
   constructor(private http: HttpClient, private router: Router) {}

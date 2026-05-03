@@ -50,6 +50,8 @@ export class RegisterEmployeComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
   loading = false;
+  showPassword = false;
+  showConfirm = false;
   currentYear = new Date().getFullYear();
 
   constructor(private http: HttpClient, private router: Router) {}

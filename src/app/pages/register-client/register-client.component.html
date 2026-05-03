@@ -54,18 +54,41 @@
         </div>
 
         <div class="row-2">
-          <div class="field-group">
-            <label>Mot de passe <span class="req">*</span></label>
-              <input type="password" class="field-input" placeholder="••••••••"
-               [(ngModel)]="client.motDePasse"/>
-               
-          </div>
-          <div class="field-group">
-            <label>Confirmer mot de passe <span class="req">*</span></label>
-            <input type="password" class="field-input" placeholder="••••••••"
-                   [(ngModel)]="confirmerMotDePasse"/>
-          </div>
-        </div>
+  <div class="field-group">
+    <label>Mot de passe <span class="req">*</span></label>
+    <div style="position: relative;">
+      <input [type]="showPassword ? 'text' : 'password'" class="field-input" placeholder="••••••••"
+             [(ngModel)]="client.motDePasse" style="padding-right: 40px;"/>
+      <span (click)="showPassword = !showPassword"
+            style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:#888;">
+        <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+        <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+  <div class="field-group">
+    <label>Confirmer mot de passe <span class="req">*</span></label>
+    <div style="position: relative;">
+      <input [type]="showConfirm ? 'text' : 'password'" class="field-input" placeholder="••••••••"
+             [(ngModel)]="confirmerMotDePasse" style="padding-right: 40px;"/>
+      <span (click)="showConfirm = !showConfirm"
+            style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:#888;">
+        <svg *ngIf="!showConfirm" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+        <svg *ngIf="showConfirm" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+</div>
 
         <div class="row-2">
           <div class="field-group">

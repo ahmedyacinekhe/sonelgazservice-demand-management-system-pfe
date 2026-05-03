@@ -244,3 +244,7 @@ select.field-input option { background: #ffffff; color: #1a2e5c; }
 .phone-hint {
   font-size: 0.75rem; color: #888; margin-top: 4px; display: block;
 }
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
