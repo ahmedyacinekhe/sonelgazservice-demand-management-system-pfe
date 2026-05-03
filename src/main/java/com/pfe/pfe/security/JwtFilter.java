@@ -35,14 +35,10 @@ public class JwtFilter extends OncePerRequestFilter {
             if (header != null && header.startsWith("Bearer ")) {
                 token = header.substring(7);
                 email = jwtUtil.recupererEmail(token);
-                System.out.println("✅ Email extrait: " + email);
-            } else {
-                System.out.println("❌ Header Authorization manquant ou invalide: " + header);
             }
 
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsServiceImpl.loadUserByUsername(email);
-                System.out.println("✅ Authorities: " + userDetails.getAuthorities());
 
                 if (jwtUtil.estTokenValide(token, email)) {
                     UsernamePasswordAuthenticationToken tokenVerifie = new UsernamePasswordAuthenticationToken(
@@ -50,13 +46,10 @@ public class JwtFilter extends OncePerRequestFilter {
                     );
                     tokenVerifie.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(tokenVerifie);
-                    System.out.println("✅ Authentification réussie !");
-                } else {
-                    System.out.println("❌ Token invalide !");
                 }
             }
         } catch (Exception e) {
-            System.out.println("❌ Erreur JWT: " + e.getMessage());
+            // Token expired or invalid - just continue without authentication
         }
 
         filterChain.doFilter(request, response);

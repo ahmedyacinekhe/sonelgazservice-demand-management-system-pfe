@@ -12,13 +12,15 @@ import com.pfe.pfe.entity.Utilisateur;
 import com.pfe.pfe.entity.Departement;
 import com.pfe.pfe.repository.UtilisateurRepository;
 import com.pfe.pfe.repository.DepartementRepository;
+import com.pfe.pfe.repository.RoleUtilisateurRepository;
 
 @Service
 public class UtilisateurService {
 
     @Autowired
     private UtilisateurRepository utilisateurRepository;
-
+    @Autowired
+private RoleUtilisateurRepository roleUtilisateurRepository;
     @Autowired
     private DepartementRepository departementRepository;
 
@@ -112,15 +114,30 @@ public class UtilisateurService {
         }
     }
 
-    public void deleteById(int id) {
-        Utilisateur utilisateur = utilisateurRepository.findById(id).orElse(null);
-        if (utilisateur instanceof Employe employe) {
-            Departement departement = employe.getDepartement();
-            if (departement != null && departement.getNombreEmployes() > 0) {
-                departement.setNombreEmployes(departement.getNombreEmployes() - 1);
-                departementRepository.save(departement);
-            }
+   @Transactional
+public void deleteById(int id) {
+    Utilisateur utilisateur = utilisateurRepository.findById(id).orElse(null);
+    if (utilisateur == null) return;
+
+    if (utilisateur instanceof Employe employe) {
+        Departement departement = employe.getDepartement();
+        if (departement != null && departement.getNombreEmployes() > 0) {
+            departement.setNombreEmployes(departement.getNombreEmployes() - 1);
+            departementRepository.save(departement);
         }
-        utilisateurRepository.deleteById(id);
+        entityManager.createNativeQuery("DELETE FROM employe WHERE id_util = :id")
+            .setParameter("id", id).executeUpdate();
+    } else {
+        entityManager.createNativeQuery("DELETE FROM client WHERE id_util = :id")
+            .setParameter("id", id).executeUpdate();
     }
+
+    entityManager.createNativeQuery("DELETE FROM role_utilisateur WHERE id_util = :id")
+        .setParameter("id", id).executeUpdate();
+
+    entityManager.clear();
+
+    entityManager.createNativeQuery("DELETE FROM utilisateur WHERE id_util = :id")
+        .setParameter("id", id).executeUpdate();
+}
 }
