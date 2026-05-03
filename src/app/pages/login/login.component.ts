@@ -58,40 +58,51 @@ export class LoginComponent {
 
     this.authService.login(credentials).subscribe({
       next: (response: LoginResult) => {
-        this.loading = false;
-        console.log('=== RESPONSE ===', response);
+  this.loading = false;
 
-        if (!response.token?.trim()) {
-          this.errorMessage = 'Token manquant dans la réponse backend.';
-          return;
-        }
+  if ((response as any).error === 'COMPTE_INACTIF') {
+    this.errorMessage = 'Votre compte est désactivé. Vous serez notifié lors de l\'activation.';
+    return;
+  }
 
-        this.authService.saveToken(response.token);
-        this.authService.saveRole(response.role);
-        this.authService.savePermissions(response.permissions || []);
+  if (!response.token?.trim()) {
+    this.errorMessage = 'Token manquant dans la réponse backend.';
+    return;
+  }
 
-        if (response.role === 'ADMIN') {
-          this.router.navigate(['/dashboard-admin']);
-        } else {
-          this.router.navigate(['/dashboard']);
-        }
-      },
+  this.authService.saveToken(response.token);
+  this.authService.saveRole(response.role);
+  this.authService.savePermissions(response.permissions || []);
+
+  if (response.role === 'ADMIN') {
+    this.router.navigate(['/dashboard-admin']);
+  } else {
+    this.router.navigate(['/dashboard']);
+  }
+},
       error: (err: HttpErrorResponse) => {
-        this.loading = false;
-        console.log('=== ERREUR ===', err.status, err.error);
+  this.loading = false;
 
-        if (err.status === 0) {
-          this.errorMessage = 'Serveur inaccessible — vérifiez que le backend tourne sur localhost:8082';
-        } else if (err.status === 401 || err.status === 403) {
-          this.errorMessage = 'Email ou mot de passe incorrect';
-        } else if (err.status === 404) {
-          this.errorMessage = 'Route /auth/login introuvable';
-        } else if (err.status >= 500) {
-          this.errorMessage = 'Erreur serveur — réessayez plus tard';
-        } else {
-          this.errorMessage = 'Email ou mot de passe incorrect';
-        }
-      }
+  if (err.status === 0) {
+    this.errorMessage = 'Serveur inaccessible — vérifiez que le backend tourne sur localhost:8082';
+  }  else if (err.status === 403) {
+  console.log('403 body:', JSON.stringify(err.error));
+  const msg = err.error?.message || err.error || '';
+  if (msg.includes('COMPTE_INACTIF')) {
+    this.errorMessage = 'Votre compte est désactivé. Vous serez notifié lors de l\'activation.';
+  } else {
+    this.errorMessage = 'Email ou mot de passe incorrect';
+  }
+} else if (err.status === 401) {
+    this.errorMessage = 'Email ou mot de passe incorrect';
+  } else if (err.status === 404) {
+    this.errorMessage = 'Route /auth/login introuvable';
+  } else if (err.status >= 500) {
+    this.errorMessage = 'Email ou mot de passe incorrect';
+  } else {
+    this.errorMessage = 'Email ou mot de passe incorrect';
+  }
+}
     });
   }
 }

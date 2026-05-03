@@ -8,6 +8,7 @@ export interface LoginResult {
   token: string;
   role: string;
   permissions: string[];
+  error?: string;
 }
 
 interface LoginApiPayload {
@@ -18,6 +19,7 @@ interface LoginApiPayload {
   role?: string;
   userRole?: string;
   permissions?: string[];
+  error?: string;
   [key: string]: unknown;
 }
 
@@ -26,7 +28,7 @@ export class AuthService {
 
   private baseUrl = 'http://localhost:8082';
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(private http: HttpClient, private router: Router) { }
 
   login(credentials: { email: string; password: string }): Observable<LoginResult> {
     const body = {
@@ -70,7 +72,7 @@ export class AuthService {
       : [];
 
     console.log('=== LOGIN RESULT ===', { token, role, permissions });
-    return { token, role, permissions };
+    return { token, role, permissions, error: typeof merged.error === 'string' ? merged.error : undefined };
   }
 
   saveToken(token: string): void {

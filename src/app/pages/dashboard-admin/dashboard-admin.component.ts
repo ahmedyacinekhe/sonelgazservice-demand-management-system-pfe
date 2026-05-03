@@ -399,10 +399,16 @@ fermerEmployesDepartement() {
   }
 
   toggleEtatCompte(u: any) {
-    const etat = u.etatCompte === 'ACTIF' ? 'INACTIF' : 'ACTIF';
-    this.http.put(`${this.baseUrl}/Api/utilisateurs/${u.idUtil}`, { ...u, etatCompte: etat }, { headers: this.getHeaders() })
-      .subscribe({ next: () => this.loadUtilisateurs(), error: () => {} });
-  }
+  const etat = u.etatCompte === 'ACTIF' ? 'INACTIF' : 'ACTIF';
+  this.http.put(
+    `${this.baseUrl}/Api/utilisateurs/${u.idUtil}/etat?etat=${etat}`,
+    {},
+    { headers: this.getHeaders() }
+  ).subscribe({
+    next: () => this.loadUtilisateurs(),
+    error: (err) => alert('Erreur: ' + err.status)
+  });
+}
 
   affecterRole() {
   if (!this.affectation.idUtil || !this.affectation.idRole) {
