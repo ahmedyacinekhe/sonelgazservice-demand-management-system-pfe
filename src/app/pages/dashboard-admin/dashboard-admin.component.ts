@@ -31,7 +31,32 @@ export class DashboardAdminComponent implements OnInit {
   matricule             = '';
   dateEmbauche          = '';
   nomDepartement        = '';
+   showModalPermissions = false;
+   rolePermissionsAffiche: any = null;
+permissionsRoleAffiche: any[] = [];
 
+voirPermissionsRole(role: any) {
+  if (this.rolePermissionsAffiche?.idRole === role.idRole) {
+    this.rolePermissionsAffiche = null;
+    this.permissionsRoleAffiche = [];
+    return;
+  }
+  this.rolePermissionsAffiche = role;
+  this.http.get<any[]>(`${this.baseUrl}/Api/rolePermissions/role/${role.idRole}`, { headers: this.getHeaders() })
+    .subscribe({
+      next: (data) => this.permissionsRoleAffiche = data,
+      error: () => this.permissionsRoleAffiche = []
+    });
+}
+
+ouvrirModalPermissions() {
+  if (!this.nouveauRole.nomRole) {
+    alert('Veuillez saisir un nom de rôle !');
+    return;
+  }
+  this.nouvellePermissionRole = [];
+  this.showModalPermissions = true;
+}
   editProfil = false;
   profilEdit = { prenomUtil: '', nomUtil: '', numTel: '' };
 
@@ -59,6 +84,15 @@ export class DashboardAdminComponent implements OnInit {
   rolesUtilisateurs: any[] = [];
 
   // RECHERCHE
+  rechercheRole = '';
+
+rolesFiltres(): any[] {
+  const search = this.rechercheRole.toLowerCase().trim();
+  if (!search) return this.roles;
+  return this.roles.filter(r =>
+    (r.nomRole || '').toLowerCase().includes(search)
+  );
+}
   recherchePermission = '';
 
 permissionsFiltres(): any[] {
@@ -377,29 +411,66 @@ fermerEmployesDepartement() {
     }
   }
 
-  saveRoleAvecPermissions() {
-    if (!this.nouveauRole.nomRole) { alert('Nom requis !'); return; }
-    this.http.post<any>(`${this.baseUrl}/Api/roles`, this.nouveauRole, { headers: this.getHeaders() })
-      .subscribe({
-        next: (role) => {
-          const idRole = role.idRole;
-          const requests = this.nouvellePermissionRole.map(idPerm =>
-            this.http.post(`${this.baseUrl}/Api/rolesPermissions`,
-              { rolePermissionId: { idRole, idPermission: idPerm } },
-              { headers: this.getHeaders() }
-            ).toPromise()
+ saveRoleAvecPermissions() {
+  if (!this.nouveauRole.nomRole) { alert('Nom requis !'); return; }
+  this.http.post<any>(`${this.baseUrl}/Api/roles`, this.nouveauRole, { headers: this.getHeaders() })
+    .subscribe({
+      next: (role) => {
+        console.log('Role créé:', role);
+        const idRole = role.idRole;
+
+        if (!idRole) {
+          this.http.get<any[]>(`${this.baseUrl}/Api/roles`, { headers: this.getHeaders() })
+            .subscribe({
+              next: (roles) => {
+                const dernierRole = roles[roles.length - 1];
+                const idRoleReel = dernierRole.idRole;
+                const requests = this.nouvellePermissionRole.map(idPerm =>
+                  this.http.post(`${this.baseUrl}/Api/rolePermissions`,
+  { rolePermissionId: { idRole: idRoleReel, idPermission: idPerm } },
+  { headers: this.getHeaders() }
+).toPromise()
+                );
+                Promise.all(requests).then(() => {
+                  this.nouveauRole = { nomRole: '', descriptionRole: '' };
+                  this.nouvellePermissionRole = [];
+                  this.showModalPermissions = false;
+                  this.loadAll();
+                  setTimeout(() => alert('Rôle créé avec succès !'), 500);
+                }).catch(() => {
+                  this.nouveauRole = { nomRole: '', descriptionRole: '' };
+                  this.nouvellePermissionRole = [];
+                  this.showModalPermissions = false;
+                  this.loadAll();
+                });
+              }
+            });
+        }else {
+  const requests = this.nouvellePermissionRole.map(idPerm =>
+    this.http.post(`${this.baseUrl}/Api/rolePermissions`,
+      { rolePermissionId: { idRole, idPermission: idPerm } },
+      { headers: this.getHeaders() }
+    ).toPromise()
           );
           Promise.all(requests).then(() => {
             this.nouveauRole = { nomRole: '', descriptionRole: '' };
             this.nouvellePermissionRole = [];
-            this.loadRoles();
-            alert('Rôle créé avec permissions !');
+            this.showModalPermissions = false;
+            this.loadAll();
+            setTimeout(() => alert('Rôle créé avec succès !'), 500);
+          }).catch(() => {
+            this.nouveauRole = { nomRole: '', descriptionRole: '' };
+            this.nouvellePermissionRole = [];
+            this.showModalPermissions = false;
+            this.loadAll();
           });
-        },
-        error: () => alert('Erreur lors de la création du rôle.')
-      });
-  }
-
+        }
+      },
+      error: (err) => {
+        alert('Erreur lors de la création du rôle : ' + (err.error?.message || err.status));
+      }
+    });
+}
   supprimerUtilisateur(id: number) {
     if (confirm('Supprimer cet utilisateur ?')) {
       this.http.delete(`${this.baseUrl}/Api/utilisateurs/${id}`, { headers: this.getHeaders() })
