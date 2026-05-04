@@ -31,6 +31,8 @@ public class RolePermissionService {
     public void deleteById(RolePermissionId id){
         rolePermissionRepository.deleteById(id);
     }
-
+   public List<RolePermission> findByRoleId(Long roleId) {
+    return rolePermissionRepository.findByRolePermissionIdIdRole(roleId);
+}
 
 }

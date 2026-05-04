@@ -10,4 +10,5 @@ import com.pfe.pfe.entity.RolePermissionId;
 @Repository
 public interface RolePermissionRepository extends JpaRepository<RolePermission, RolePermissionId> {
     List<RolePermission> findByRolePermissionId_IdRole(int idRole);
+    List<RolePermission> findByRolePermissionIdIdRole(Long roleId);
 }

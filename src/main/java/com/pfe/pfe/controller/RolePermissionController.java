@@ -26,6 +26,10 @@ public class RolePermissionController {
     public List<RolePermission> findAll(){
         return rolePermissionService.findAll();
     }
+    @GetMapping("/role/{roleId}")
+public List<RolePermission> findByRoleId(@PathVariable Long roleId) {
+    return rolePermissionService.findByRoleId(roleId);
+}
     @GetMapping("/{id}")
     public RolePermission findById(@PathVariable RolePermissionId id){
         return rolePermissionService.findById(id);
