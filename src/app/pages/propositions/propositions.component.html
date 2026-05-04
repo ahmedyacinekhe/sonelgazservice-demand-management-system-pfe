@@ -6,6 +6,28 @@
   <div class="card shadow p-4">
     <div class="card-body">
 
+      <!-- Choix du métier -->
+      <div class="mb-3">
+        <label class="form-label">Métier</label>
+        <select class="form-control" [(ngModel)]="selectedIdMetier" (change)="onMetierChange()">
+          <option [ngValue]="null" disabled>-- Choisir un métier --</option>
+          <option *ngFor="let m of metiers" [value]="m.idMetier">{{ m.libelleMetier }}</option>
+        </select>
+      </div>
+
+      <!-- Choix du département filtré -->
+      <div class="mb-3">
+        <label class="form-label">Département</label>
+        <select class="form-control" [(ngModel)]="proposition.departement" [disabled]="departements.length === 0">
+          <option [ngValue]="null" disabled>-- Choisir un département --</option>
+          <option *ngFor="let d of departements" [ngValue]="{ idDepartement: d.idDepartement }">
+            {{ d.libelleDepartement }}
+          </option>
+        </select>
+        <small class="text-muted" *ngIf="!selectedIdMetier">Veuillez d'abord choisir un métier</small>
+      </div>
+
+      <!-- Description -->
       <div class="mb-3">
         <label class="form-label">Description</label>
         <textarea 
@@ -16,6 +38,7 @@
         </textarea>
       </div>
 
+      <!-- Type de proposition -->
       <div class="mb-3">
         <label class="form-label">Type de proposition</label>
         <select class="form-control" [(ngModel)]="proposition.typeProposition">
@@ -30,7 +53,7 @@
       <div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
 
       <button class="btn w-100 text-white" style="background-color: #de7b3b;" 
-        (click)="submit()" [disabled]="loading">
+        (click)="submit()" [disabled]="loading || !proposition.departement">
         {{ loading ? 'Envoi...' : 'Soumettre la proposition' }}
       </button>
 

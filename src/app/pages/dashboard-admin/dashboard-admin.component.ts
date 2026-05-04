@@ -31,32 +31,41 @@ export class DashboardAdminComponent implements OnInit {
   matricule             = '';
   dateEmbauche          = '';
   nomDepartement        = '';
-   showModalPermissions = false;
-   rolePermissionsAffiche: any = null;
-permissionsRoleAffiche: any[] = [];
+  showModalPermissions  = false;
+  rolePermissionsAffiche: any = null;
+  permissionsRoleAffiche: any[] = [];
 
-voirPermissionsRole(role: any) {
-  if (this.rolePermissionsAffiche?.idRole === role.idRole) {
-    this.rolePermissionsAffiche = null;
-    this.permissionsRoleAffiche = [];
-    return;
-  }
-  this.rolePermissionsAffiche = role;
-  this.http.get<any[]>(`${this.baseUrl}/Api/rolePermissions/role/${role.idRole}`, { headers: this.getHeaders() })
-    .subscribe({
-      next: (data) => this.permissionsRoleAffiche = data,
-      error: () => this.permissionsRoleAffiche = []
-    });
-}
+  // ✅ Variables modal métiers département
+  showModalMetiers = false;
+  departementPourMetiers: any = null;
+  metiersSelectionnesDepartement: number[] = [];
+  metiersSaving = false;
+  metiersSaveError = '';
+  metiersSaveSuccess = '';
 
-ouvrirModalPermissions() {
-  if (!this.nouveauRole.nomRole) {
-    alert('Veuillez saisir un nom de rôle !');
-    return;
+  voirPermissionsRole(role: any) {
+    if (this.rolePermissionsAffiche?.idRole === role.idRole) {
+      this.rolePermissionsAffiche = null;
+      this.permissionsRoleAffiche = [];
+      return;
+    }
+    this.rolePermissionsAffiche = role;
+    this.http.get<any[]>(`${this.baseUrl}/Api/rolePermissions/role/${role.idRole}`, { headers: this.getHeaders() })
+      .subscribe({
+        next: (data) => this.permissionsRoleAffiche = data,
+        error: () => this.permissionsRoleAffiche = []
+      });
   }
-  this.nouvellePermissionRole = [];
-  this.showModalPermissions = true;
-}
+
+  ouvrirModalPermissions() {
+    if (!this.nouveauRole.nomRole) {
+      alert('Veuillez saisir un nom de rôle !');
+      return;
+    }
+    this.nouvellePermissionRole = [];
+    this.showModalPermissions = true;
+  }
+
   editProfil = false;
   profilEdit = { prenomUtil: '', nomUtil: '', numTel: '' };
 
@@ -65,16 +74,22 @@ ouvrirModalPermissions() {
   notifEmail = true;
   notifApp   = true;
 
+  // ✅ Métier / Département pour le formulaire demande
+  metiers: any[] = [];
+  departementsFiltre: any[] = [];
+  selectedIdMetier: number | null = null;
+
   demandeTypeSelectionne = '';
   demandeSubmitting = false;
   demandeError = '';
   demandeSuccess = '';
-  nouvelleDemande = {
+  nouvelleDemande: any = {
     description: '',
     typeRequete: '',
     typeReclamation: '',
     niveauUrgence: '',
-    typeProposition: ''
+    typeProposition: '',
+    departement: null
   };
 
   utilisateurs: any[] = [];
@@ -83,96 +98,91 @@ ouvrirModalPermissions() {
   permissions: any[] = [];
   rolesUtilisateurs: any[] = [];
 
-  // RECHERCHE
   rechercheRole = '';
+  rolesFiltres(): any[] {
+    const search = this.rechercheRole.toLowerCase().trim();
+    if (!search) return this.roles;
+    return this.roles.filter(r => (r.nomRole || '').toLowerCase().includes(search));
+  }
 
-rolesFiltres(): any[] {
-  const search = this.rechercheRole.toLowerCase().trim();
-  if (!search) return this.roles;
-  return this.roles.filter(r =>
-    (r.nomRole || '').toLowerCase().includes(search)
-  );
-}
   recherchePermission = '';
+  permissionsFiltres(): any[] {
+    const search = this.recherchePermission.toLowerCase().trim();
+    if (!search) return this.permissions;
+    return this.permissions.filter(p => (p.nomPermission || '').toLowerCase().includes(search));
+  }
 
-permissionsFiltres(): any[] {
-  const search = this.recherchePermission.toLowerCase().trim();
-  if (!search) return this.permissions;
-  return this.permissions.filter(p =>
-    (p.nomPermission || '').toLowerCase().includes(search)
-  );
-}
   rechercheUtilisateur = '';
-
   utilisateursFiltres(): any[] {
     const search = this.rechercheUtilisateur.toLowerCase().trim();
     if (!search) return this.utilisateurs;
     return this.utilisateurs.filter(u =>
-      (u.nomUtil    || '').toLowerCase().includes(search) ||
+      (u.nomUtil || '').toLowerCase().includes(search) ||
       (u.prenomUtil || '').toLowerCase().includes(search)
     );
   }
-  rechercheDepartement = '';
 
+  rechercheDepartement = '';
   departementsFiltres(): any[] {
     const search = this.rechercheDepartement.toLowerCase().trim();
     if (!search) return this.departements;
-    return this.departements.filter(d =>
-      (d.nomDepartement || '').toLowerCase().includes(search)
+    return this.departements.filter(d => (d.nomDepartement || '').toLowerCase().includes(search));
+  }
+
+  rechercheAffectation = '';
+  showAffectationDropdown = false;
+
+  utilisateursFiltresAffectation(): any[] {
+    const s = this.rechercheAffectation.toLowerCase().trim();
+    if (!s) return this.utilisateurs;
+    return this.utilisateurs.filter(u =>
+      (u.nomUtil || '').toLowerCase().includes(s) ||
+      (u.prenomUtil || '').toLowerCase().includes(s)
     );
   }
-  rechercheAffectation = '';
-showAffectationDropdown = false;
 
-utilisateursFiltresAffectation(): any[] {
-  const s = this.rechercheAffectation.toLowerCase().trim();
-  if (!s) return this.utilisateurs;
-  return this.utilisateurs.filter(u =>
-    (u.nomUtil || '').toLowerCase().includes(s) ||
-    (u.prenomUtil || '').toLowerCase().includes(s)
-  );
-}
+  selectUtilisateurAffectation(u: any) {
+    this.affectation.idUtil = u.idUtil;
+    this.rechercheAffectation = `${u.prenomUtil} ${u.nomUtil}`;
+    this.showAffectationDropdown = false;
+  }
 
-selectUtilisateurAffectation(u: any) {
-  this.affectation.idUtil = u.idUtil;
-  this.rechercheAffectation = `${u.prenomUtil} ${u.nomUtil}`;
-  this.showAffectationDropdown = false;
-}
-onRoleAffectationChange() {
-  this.affectation.idDepartement = 0;
-}
+  onRoleAffectationChange() {
+    this.affectation.idDepartement = 0;
+  }
 
-affectationNecessiteDepartement(): boolean {
-  const role = this.roles.find(r => Number(r.idRole) === Number(this.affectation.idRole));
-  if (!role) return false;
-  const nom = role.nomRole.toUpperCase();
-  return nom === 'EMPLOYE' || nom === 'RESPONSABLE' || nom === 'ADMIN';
-}
+  affectationNecessiteDepartement(): boolean {
+    const role = this.roles.find(r => Number(r.idRole) === Number(this.affectation.idRole));
+    if (!role) return false;
+    const nom = role.nomRole.toUpperCase();
+    return nom === 'EMPLOYE' || nom === 'RESPONSABLE' || nom === 'ADMIN';
+  }
 
   nouveauDepartement = { nomDepartement: '', nombreEmployes: 0 };
   departementEdite: any = null;
   departementSelectionne: any = null;
-employesDepartement: any[] = [];
+  employesDepartement: any[] = [];
 
-voirEmployesDepartement(d: any) {
-  this.departementSelectionne = d;
-  this.http.get<any[]>(`${this.baseUrl}/Api/employes/departement/${d.idDepartement}`, 
-    { headers: this.getHeaders() })
-    .subscribe({
-      next: (data) => {
-        this.employesDepartement = data.filter(e => {
-          const role = this.getRoleUtilisateur(e.idUtil);
-          return role !== 'CLIENT';
-        });
-      },
-      error: () => this.employesDepartement = []
-    });
-}
+  voirEmployesDepartement(d: any) {
+    this.departementSelectionne = d;
+    this.http.get<any[]>(`${this.baseUrl}/Api/employes/departement/${d.idDepartement}`,
+      { headers: this.getHeaders() })
+      .subscribe({
+        next: (data) => {
+          this.employesDepartement = data.filter(e => {
+            const role = this.getRoleUtilisateur(e.idUtil);
+            return role !== 'CLIENT';
+          });
+        },
+        error: () => this.employesDepartement = []
+      });
+  }
 
-fermerEmployesDepartement() {
-  this.departementSelectionne = null;
-  this.employesDepartement = [];
-}
+  fermerEmployesDepartement() {
+    this.departementSelectionne = null;
+    this.employesDepartement = [];
+  }
+
   nouvellePermission  = { nomPermission: '', descriptionPermission: '' };
   permissionEditee: any = null;
   nouveauRole         = { nomRole: '', descriptionRole: '' };
@@ -195,17 +205,86 @@ fermerEmployesDepartement() {
   ngOnInit() {
     this.loadAll();
     this.loadCurrentUser();
+    // ✅ Charger les métiers au démarrage
+    this.http.get<any[]>(`${this.baseUrl}/Api/metier`, { headers: this.getHeaders() })
+      .subscribe({ next: (data) => this.metiers = data, error: () => {} });
   }
 
-  onAvatarError(event: any) {
-    event.target.style.display = 'none';
+  // ✅ Quand l'utilisateur choisit un métier → filtrer les départements
+  onMetierChange(): void {
+    this.nouvelleDemande.departement = null;
+    this.departementsFiltre = [];
+
+    if (this.selectedIdMetier) {
+      const url = `${this.baseUrl}/Api/departements/par-metier/${this.selectedIdMetier}`;
+      this.http.get<any[]>(url, { headers: this.getHeaders() })
+        .subscribe({
+          next: (data) => this.departementsFiltre = data,
+          error: () => this.departementsFiltre = []
+        });
+    }
   }
 
+  // ✅ Ouvrir le modal métiers d'un département
+  gererMetiersDepartement(d: any) {
+    this.departementPourMetiers = d;
+    this.metiersSelectionnesDepartement = [];
+    this.metiersSaveError = '';
+    this.metiersSaveSuccess = '';
+
+    this.http.get<number[]>(
+      `${this.baseUrl}/Api/departements/${d.idDepartement}/metiers`,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (ids) => {
+        this.metiersSelectionnesDepartement = ids;
+        this.showModalMetiers = true;
+      },
+      error: () => {
+        // Ouvrir quand même le modal même si erreur de chargement
+        this.showModalMetiers = true;
+      }
+    });
+  }
+
+  // ✅ Vérifier si un métier est coché
+  isMetierSelected(idMetier: number): boolean {
+    return this.metiersSelectionnesDepartement.includes(idMetier);
+  }
+
+  // ✅ Cocher / décocher un métier
+  toggleMetierDepartement(idMetier: number) {
+    const index = this.metiersSelectionnesDepartement.indexOf(idMetier);
+    if (index === -1) this.metiersSelectionnesDepartement.push(idMetier);
+    else this.metiersSelectionnesDepartement.splice(index, 1);
+  }
+
+  // ✅ Sauvegarder les métiers d'un département
+  sauvegarderMetiersDepartement() {
+    this.metiersSaveError = '';
+    this.metiersSaveSuccess = '';
+    this.metiersSaving = true;
+
+    this.http.post(
+      `${this.baseUrl}/Api/departements/${this.departementPourMetiers.idDepartement}/metiers`,
+      this.metiersSelectionnesDepartement,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: () => {
+        this.metiersSaving = false;
+        this.metiersSaveSuccess = 'Métiers enregistrés avec succès !';
+        setTimeout(() => this.showModalMetiers = false, 1000);
+      },
+      error: () => {
+        this.metiersSaving = false;
+        this.metiersSaveError = 'Erreur lors de la sauvegarde. Réessayez.';
+      }
+    });
+  }
+
+  onAvatarError(event: any) { event.target.style.display = 'none'; }
   toggleSidebar() { this.sidebarOpen = !this.sidebarOpen; }
-
-  closeSidebarMobile() {
-    if (window.innerWidth < 900) this.sidebarOpen = false;
-  }
+  closeSidebarMobile() { if (window.innerWidth < 900) this.sidebarOpen = false; }
 
   private getHeaders() {
     const token = localStorage.getItem('token');
@@ -219,7 +298,7 @@ fermerEmployesDepartement() {
         const payload = JSON.parse(atob(token.split('.')[1]));
         this.emailUtilisateur = payload.sub || payload.email || 'admin@sonelgaz.dz';
         this.roleUtilisateur  = payload.role || payload.roles?.[0] || 'Admin';
-      } catch { /* ignore */ }
+      } catch { }
     }
     this.http.get<any>(`${this.baseUrl}/Api/employes/me`, { headers: this.getHeaders() })
       .subscribe({
@@ -275,12 +354,15 @@ fermerEmployesDepartement() {
     this.demandeTypeSelectionne = type;
     this.demandeError = '';
     this.demandeSuccess = '';
+    this.selectedIdMetier = null;
+    this.departementsFiltre = [];
     this.nouvelleDemande = {
       description: '',
       typeRequete: '',
       typeReclamation: '',
       niveauUrgence: '',
-      typeProposition: ''
+      typeProposition: '',
+      departement: null
     };
   }
 
@@ -289,33 +371,29 @@ fermerEmployesDepartement() {
     this.demandeSuccess = '';
     const d = this.nouvelleDemande;
 
-    if (!d.description?.trim()) {
-      this.demandeError = 'La description est obligatoire.';
-      return;
-    }
+    if (!d.description?.trim()) { this.demandeError = 'La description est obligatoire.'; return; }
+    if (!d.departement) { this.demandeError = 'Veuillez choisir un métier et un département.'; return; }
+
     if (this.demandeTypeSelectionne === 'REQUETE' && !d.typeRequete) {
-      this.demandeError = 'Veuillez choisir un type de requête.';
-      return;
+      this.demandeError = 'Veuillez choisir un type de requête.'; return;
     }
     if (this.demandeTypeSelectionne === 'RECLAMATION' && (!d.typeReclamation || !d.niveauUrgence)) {
-      this.demandeError = 'Veuillez choisir le type de réclamation et le niveau d\'urgence.';
-      return;
+      this.demandeError = 'Veuillez choisir le type de réclamation et le niveau d\'urgence.'; return;
     }
     if (this.demandeTypeSelectionne === 'PROPOSITION' && !d.typeProposition) {
-      this.demandeError = 'Veuillez choisir un type de proposition.';
-      return;
+      this.demandeError = 'Veuillez choisir un type de proposition.'; return;
     }
 
     this.demandeSubmitting = true;
+
     const onDone = (msg: string) => {
       this.demandeSuccess = msg;
       this.demandeSubmitting = false;
+      this.selectedIdMetier = null;
+      this.departementsFiltre = [];
       this.nouvelleDemande = {
-        description: '',
-        typeRequete: '',
-        typeReclamation: '',
-        niveauUrgence: '',
-        typeProposition: ''
+        description: '', typeRequete: '', typeReclamation: '',
+        niveauUrgence: '', typeProposition: '', departement: null
       };
       this.demandeTypeSelectionne = '';
     };
@@ -325,24 +403,27 @@ fermerEmployesDepartement() {
     };
 
     if (this.demandeTypeSelectionne === 'REQUETE') {
-      this.requeteService.save({ description: d.description, typeRequete: d.typeRequete }).subscribe({
-        next: () => onDone('Requête soumise avec succès !'),
-        error: onErr
-      });
+      this.requeteService.save({
+        description: d.description,
+        typeRequete: d.typeRequete,
+        departement: d.departement
+      }).subscribe({ next: () => onDone('Requête soumise avec succès !'), error: onErr });
+
     } else if (this.demandeTypeSelectionne === 'RECLAMATION') {
       this.reclamationService.save({
         description: d.description,
         typeReclamation: d.typeReclamation,
-        niveauUrgence: d.niveauUrgence
-      }).subscribe({
-        next: () => onDone('Réclamation soumise avec succès !'),
-        error: onErr
-      });
+        niveauUrgence: d.niveauUrgence,
+        departement: d.departement
+      }).subscribe({ next: () => onDone('Réclamation soumise avec succès !'), error: onErr });
+
     } else if (this.demandeTypeSelectionne === 'PROPOSITION') {
-      this.propositionService.save({ description: d.description, typeProposition: d.typeProposition }).subscribe({
-        next: () => onDone('Proposition soumise avec succès !'),
-        error: onErr
-      });
+      this.propositionService.save({
+        description: d.description,
+        typeProposition: d.typeProposition,
+        departement: d.departement
+      }).subscribe({ next: () => onDone('Proposition soumise avec succès !'), error: onErr });
+
     } else {
       this.demandeSubmitting = false;
     }
@@ -352,12 +433,11 @@ fermerEmployesDepartement() {
     this.demandeTypeSelectionne = '';
     this.demandeError = '';
     this.demandeSuccess = '';
+    this.selectedIdMetier = null;
+    this.departementsFiltre = [];
     this.nouvelleDemande = {
-      description: '',
-      typeRequete: '',
-      typeReclamation: '',
-      niveauUrgence: '',
-      typeProposition: ''
+      description: '', typeRequete: '', typeReclamation: '',
+      niveauUrgence: '', typeProposition: '', departement: null
     };
   }
 
@@ -373,21 +453,25 @@ fermerEmployesDepartement() {
     this.http.get<any[]>(`${this.baseUrl}/Api/utilisateurs`, { headers: this.getHeaders() })
       .subscribe({ next: (d) => this.utilisateurs = d, error: () => {} });
   }
+
   loadDepartements() {
-  this.http.get<any[]>(`${this.baseUrl}/Api/departements`, { headers: this.getHeaders() })
-    .subscribe({ 
-      next: (d) => this.departements = d.sort((a, b) => a.idDepartement - b.idDepartement), 
-      error: () => {} 
-    });
-}
+    this.http.get<any[]>(`${this.baseUrl}/Api/departements`, { headers: this.getHeaders() })
+      .subscribe({
+        next: (d) => this.departements = d.sort((a, b) => a.idDepartement - b.idDepartement),
+        error: () => {}
+      });
+  }
+
   loadRoles() {
     this.http.get<any[]>(`${this.baseUrl}/Api/roles`, { headers: this.getHeaders() })
       .subscribe({ next: (d) => this.roles = d, error: () => {} });
   }
+
   loadPermissions() {
     this.http.get<any[]>(`${this.baseUrl}/Api/permissions`, { headers: this.getHeaders() })
       .subscribe({ next: (d) => this.permissions = d, error: () => {} });
   }
+
   loadRolesUtilisateurs() {
     this.http.get<any[]>(`${this.baseUrl}/Api/rolesUtilisateurs`, { headers: this.getHeaders() })
       .subscribe({ next: (d) => this.rolesUtilisateurs = d, error: () => {} });
@@ -404,73 +488,64 @@ fermerEmployesDepartement() {
 
   togglePermission(idPermission: number) {
     const index = this.nouvellePermissionRole.indexOf(idPermission);
-    if (index === -1) {
-      this.nouvellePermissionRole.push(idPermission);
-    } else {
-      this.nouvellePermissionRole.splice(index, 1);
-    }
+    if (index === -1) this.nouvellePermissionRole.push(idPermission);
+    else this.nouvellePermissionRole.splice(index, 1);
   }
 
- saveRoleAvecPermissions() {
-  if (!this.nouveauRole.nomRole) { alert('Nom requis !'); return; }
-  this.http.post<any>(`${this.baseUrl}/Api/roles`, this.nouveauRole, { headers: this.getHeaders() })
-    .subscribe({
-      next: (role) => {
-        console.log('Role créé:', role);
-        const idRole = role.idRole;
-
-        if (!idRole) {
-          this.http.get<any[]>(`${this.baseUrl}/Api/roles`, { headers: this.getHeaders() })
-            .subscribe({
-              next: (roles) => {
-                const dernierRole = roles[roles.length - 1];
-                const idRoleReel = dernierRole.idRole;
-                const requests = this.nouvellePermissionRole.map(idPerm =>
-                  this.http.post(`${this.baseUrl}/Api/rolePermissions`,
-  { rolePermissionId: { idRole: idRoleReel, idPermission: idPerm } },
-  { headers: this.getHeaders() }
-).toPromise()
-                );
-                Promise.all(requests).then(() => {
-                  this.nouveauRole = { nomRole: '', descriptionRole: '' };
-                  this.nouvellePermissionRole = [];
-                  this.showModalPermissions = false;
-                  this.loadAll();
-                  setTimeout(() => alert('Rôle créé avec succès !'), 500);
-                }).catch(() => {
-                  this.nouveauRole = { nomRole: '', descriptionRole: '' };
-                  this.nouvellePermissionRole = [];
-                  this.showModalPermissions = false;
-                  this.loadAll();
-                });
-              }
+  saveRoleAvecPermissions() {
+    if (!this.nouveauRole.nomRole) { alert('Nom requis !'); return; }
+    this.http.post<any>(`${this.baseUrl}/Api/roles`, this.nouveauRole, { headers: this.getHeaders() })
+      .subscribe({
+        next: (role) => {
+          const idRole = role.idRole;
+          if (!idRole) {
+            this.http.get<any[]>(`${this.baseUrl}/Api/roles`, { headers: this.getHeaders() })
+              .subscribe({
+                next: (roles) => {
+                  const idRoleReel = roles[roles.length - 1].idRole;
+                  const requests = this.nouvellePermissionRole.map(idPerm =>
+                    this.http.post(`${this.baseUrl}/Api/rolePermissions`,
+                      { rolePermissionId: { idRole: idRoleReel, idPermission: idPerm } },
+                      { headers: this.getHeaders() }).toPromise()
+                  );
+                  Promise.all(requests).then(() => {
+                    this.nouveauRole = { nomRole: '', descriptionRole: '' };
+                    this.nouvellePermissionRole = [];
+                    this.showModalPermissions = false;
+                    this.loadAll();
+                    setTimeout(() => alert('Rôle créé avec succès !'), 500);
+                  }).catch(() => {
+                    this.nouveauRole = { nomRole: '', descriptionRole: '' };
+                    this.nouvellePermissionRole = [];
+                    this.showModalPermissions = false;
+                    this.loadAll();
+                  });
+                }
+              });
+          } else {
+            const requests = this.nouvellePermissionRole.map(idPerm =>
+              this.http.post(`${this.baseUrl}/Api/rolePermissions`,
+                { rolePermissionId: { idRole, idPermission: idPerm } },
+                { headers: this.getHeaders() }).toPromise()
+            );
+            Promise.all(requests).then(() => {
+              this.nouveauRole = { nomRole: '', descriptionRole: '' };
+              this.nouvellePermissionRole = [];
+              this.showModalPermissions = false;
+              this.loadAll();
+              setTimeout(() => alert('Rôle créé avec succès !'), 500);
+            }).catch(() => {
+              this.nouveauRole = { nomRole: '', descriptionRole: '' };
+              this.nouvellePermissionRole = [];
+              this.showModalPermissions = false;
+              this.loadAll();
             });
-        }else {
-  const requests = this.nouvellePermissionRole.map(idPerm =>
-    this.http.post(`${this.baseUrl}/Api/rolePermissions`,
-      { rolePermissionId: { idRole, idPermission: idPerm } },
-      { headers: this.getHeaders() }
-    ).toPromise()
-          );
-          Promise.all(requests).then(() => {
-            this.nouveauRole = { nomRole: '', descriptionRole: '' };
-            this.nouvellePermissionRole = [];
-            this.showModalPermissions = false;
-            this.loadAll();
-            setTimeout(() => alert('Rôle créé avec succès !'), 500);
-          }).catch(() => {
-            this.nouveauRole = { nomRole: '', descriptionRole: '' };
-            this.nouvellePermissionRole = [];
-            this.showModalPermissions = false;
-            this.loadAll();
-          });
-        }
-      },
-      error: (err) => {
-        alert('Erreur lors de la création du rôle : ' + (err.error?.message || err.status));
-      }
-    });
-}
+          }
+        },
+        error: (err) => alert('Erreur lors de la création du rôle : ' + (err.error?.message || err.status))
+      });
+  }
+
   supprimerUtilisateur(id: number) {
     if (confirm('Supprimer cet utilisateur ?')) {
       this.http.delete(`${this.baseUrl}/Api/utilisateurs/${id}`, { headers: this.getHeaders() })
@@ -479,75 +554,50 @@ fermerEmployesDepartement() {
   }
 
   toggleEtatCompte(u: any) {
-  const etat = u.etatCompte === 'ACTIF' ? 'INACTIF' : 'ACTIF';
-  this.http.put(
-    `${this.baseUrl}/Api/utilisateurs/${u.idUtil}/etat?etat=${etat}`,
-    {},
-    { headers: this.getHeaders() }
-  ).subscribe({
-    next: () => this.loadUtilisateurs(),
-    error: (err) => alert('Erreur: ' + err.status)
-  });
-}
+    const etat = u.etatCompte === 'ACTIF' ? 'INACTIF' : 'ACTIF';
+    this.http.put(`${this.baseUrl}/Api/utilisateurs/${u.idUtil}/etat?etat=${etat}`, {},
+      { headers: this.getHeaders() })
+      .subscribe({ next: () => this.loadUtilisateurs(), error: (err) => alert('Erreur: ' + err.status) });
+  }
 
   affecterRole() {
-  if (!this.affectation.idUtil || !this.affectation.idRole) {
-    alert('Choisissez utilisateur et rôle !');
-    return;
-  }
-
-  const roleSelectionne = this.roles.find(r => Number(r.idRole) === Number(this.affectation.idRole));
-  const nomRole = roleSelectionne ? roleSelectionne.nomRole : '';
-  const necessiteDepartement = nomRole.toUpperCase() === 'EMPLOYE' || nomRole.toUpperCase() === 'RESPONSABLE';
-
-  if (necessiteDepartement && !this.affectation.idDepartement) {
-    alert('Veuillez choisir un département pour ce rôle !');
-    return;
-  }
-
-  const idUtil = this.affectation.idUtil;
-  const idRole = this.affectation.idRole;
-  const idDepartement = this.affectation.idDepartement;
-
-  this.http.delete(
-    `${this.baseUrl}/Api/rolesUtilisateurs/utilisateur/${idUtil}`,
-    { headers: this.getHeaders() }
-  ).subscribe({
-    next: () => {
-      this.http.post(
-        `${this.baseUrl}/Api/rolesUtilisateurs`,
-        { roleUtilisateurId: { idUtil, idRole } },
-        { headers: this.getHeaders() }
-      ).subscribe({
+    if (!this.affectation.idUtil || !this.affectation.idRole) {
+      alert('Choisissez utilisateur et rôle !'); return;
+    }
+    const roleSelectionne = this.roles.find(r => Number(r.idRole) === Number(this.affectation.idRole));
+    const nomRole = roleSelectionne ? roleSelectionne.nomRole : '';
+    const necessiteDepartement = nomRole.toUpperCase() === 'EMPLOYE' || nomRole.toUpperCase() === 'RESPONSABLE';
+    if (necessiteDepartement && !this.affectation.idDepartement) {
+      alert('Veuillez choisir un département pour ce rôle !'); return;
+    }
+    const { idUtil, idRole, idDepartement } = this.affectation;
+    this.http.delete(`${this.baseUrl}/Api/rolesUtilisateurs/utilisateur/${idUtil}`, { headers: this.getHeaders() })
+      .subscribe({
         next: () => {
-          // Convertir l'utilisateur dans la bonne table
-          this.http.put(
-            `${this.baseUrl}/Api/utilisateurs/${idUtil}/convertir?nouveauRole=${nomRole}&idDepartement=${idDepartement}`,
-            {},
-            { headers: this.getHeaders() }
-          ).subscribe({
-            next: () => {
-              console.log('✅ Conversion réussie');
-              this.loadAll();
-              if (this.departementSelectionne) {
-                setTimeout(() => this.voirEmployesDepartement(this.departementSelectionne), 500);
-              }
-              alert('Rôle affecté avec succès !');
-              this.affectation = { idUtil: 0, idRole: 0, idDepartement: 0 };
-              this.rechercheAffectation = '';
-            },
-            error: (err) => {
-              console.error('❌ Erreur conversion:', err);
-              alert('Rôle affecté mais erreur lors de la conversion !');
-            }
-          });
+          this.http.post(`${this.baseUrl}/Api/rolesUtilisateurs`,
+            { roleUtilisateurId: { idUtil, idRole } }, { headers: this.getHeaders() })
+            .subscribe({
+              next: () => {
+                this.http.put(
+                  `${this.baseUrl}/Api/utilisateurs/${idUtil}/convertir?nouveauRole=${nomRole}&idDepartement=${idDepartement}`,
+                  {}, { headers: this.getHeaders() })
+                  .subscribe({
+                    next: () => {
+                      this.loadAll();
+                      if (this.departementSelectionne) setTimeout(() => this.voirEmployesDepartement(this.departementSelectionne), 500);
+                      alert('Rôle affecté avec succès !');
+                      this.affectation = { idUtil: 0, idRole: 0, idDepartement: 0 };
+                      this.rechercheAffectation = '';
+                    },
+                    error: () => alert('Rôle affecté mais erreur lors de la conversion !')
+                  });
+              },
+              error: () => alert('Erreur lors de l\'affectation du rôle.')
+            });
         },
-        error: () => alert('Erreur lors de l\'affectation du rôle.')
+        error: () => alert('Erreur lors de la suppression de l\'ancien rôle.')
       });
-    },
-    error: () => alert('Erreur lors de la suppression de l\'ancien rôle.')
-  });
-}
+  }
 
   saveDepartement() {
     if (!this.nouveauDepartement.nomDepartement) { alert('Nom requis !'); return; }
