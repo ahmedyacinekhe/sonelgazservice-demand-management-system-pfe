@@ -34,30 +34,31 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session ->
-        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-.exceptionHandling(ex -> ex
-    .authenticationEntryPoint((request, response, authException) -> {
-        if (authException instanceof org.springframework.security.authentication.DisabledException) {
-            response.setStatus(403);
-        } else {
-            response.setStatus(401);
-        }
-    })
-)
-.authorizeHttpRequests(auth -> auth
-    .requestMatchers(
-        "/auth/login",
-        "/auth/register/client",
-        "/auth/register/employe",
-        "/Api/departements",
-        "/Api/departements/**"
-    ).permitAll()
-    .anyRequest().authenticated()
-)
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            if (authException instanceof org.springframework.security.authentication.DisabledException) {
+                                response.setStatus(403);
+                            } else {
+                                response.setStatus(401);
+                            }
+                        })
+                )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/auth/login",
+                                "/auth/register/client",
+                                "/auth/register/employe",
+                                "/Api/departements",
+                                "/Api/departements/**",
+                                "/Api/metier",        // ✅ ajouté
+                                "/Api/metier/**"      // ✅ ajouté
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
-        
     }
 
     @Bean
