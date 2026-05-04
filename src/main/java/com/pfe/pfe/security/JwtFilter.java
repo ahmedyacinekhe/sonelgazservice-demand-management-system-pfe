@@ -48,10 +48,9 @@ public class JwtFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(tokenVerifie);
                 }
             }
-        } catch (Exception e) {
-            // Token expired or invalid - just continue without authentication
-        }
-
+        }  catch (Exception e) {
+    System.out.println("❌ JWT ERROR: " + e.getMessage());
+}
         filterChain.doFilter(request, response);
     }
 }
