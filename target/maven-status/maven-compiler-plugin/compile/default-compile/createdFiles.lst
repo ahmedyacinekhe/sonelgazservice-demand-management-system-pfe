@@ -79,6 +79,7 @@ com\pfe\pfe\service\FilialeService.class
 com\pfe\pfe\service\DirectionService.class
 com\pfe\pfe\service\EtatDemandeService.class
 com\pfe\pfe\repository\PropositionRepository.class
+com\pfe\pfe\controller\FichierController.class
 com\pfe\pfe\entity\Client.class
 com\pfe\pfe\repository\RolePermissionRepository.class
 com\pfe\pfe\controller\FilialeController.class

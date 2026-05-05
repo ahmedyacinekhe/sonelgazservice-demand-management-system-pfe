@@ -24,7 +24,9 @@ public class Demande {
 
     @Column(name="description")
     private String description;
-
+    
+    @Column(name = "piece_jointe")
+private String pieceJointe; // stocke le nom du fichier
     @ManyToOne
     @JoinColumn(name="id_util")
     private Utilisateur utilisateur;
