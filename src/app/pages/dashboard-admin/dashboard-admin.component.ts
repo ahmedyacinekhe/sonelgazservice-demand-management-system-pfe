@@ -7,11 +7,11 @@ import { AuthService } from '../../core/services/auth.service';
 import { RequeteService } from '../../core/services/requete.service';
 import { ReclamationService } from '../../core/services/reclamation.service';
 import { PropositionService } from '../../core/services/proposition.service';
-
+import { HistoriqueComponent } from '../historique/historique.component';
 @Component({
   selector: 'app-dashboard-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, HistoriqueComponent],
   templateUrl: './dashboard-admin.component.html',
   styleUrl: './dashboard-admin.component.css'
 })
@@ -691,4 +691,5 @@ getFileIcon(): string {
         .subscribe({ next: () => this.loadRoles(), error: () => {} });
     }
   }
+  
 }

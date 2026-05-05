@@ -1,99 +1,149 @@
-<app-navbar></app-navbar>
+<div class="page-header">
+  <h4 class="page-title">🕐 Historique des demandes</h4>
+  <p class="page-subtitle">Consultez toutes vos demandes soumises</p>
+</div>
 
-<div class="container mt-4">
-  <h4 class="fw-bold mb-4">📁 Historique des Demandes</h4>
+<!-- ONGLETS -->
+<div class="historique-tabs">
+  <button class="hist-tab" [class.active]="activeTab === 'tous'"
+          (click)="activeTab = 'tous'">
+    Toutes <span class="tab-count">{{ toutesLesDemandes.length }}</span>
+  </button>
+  <button class="hist-tab" [class.active]="activeTab === 'REQUETE'"
+          (click)="activeTab = 'REQUETE'">
+    📝 Requêtes
+    <span class="tab-count">{{ countType('REQUETE') }}</span>
+  </button>
+  <button class="hist-tab" [class.active]="activeTab === 'PROPOSITION'"
+          (click)="activeTab = 'PROPOSITION'">
+    📋 Propositions
+    <span class="tab-count">{{ countType('PROPOSITION') }}</span>
+  </button>
+  <button class="hist-tab" [class.active]="activeTab === 'RECLAMATION'"
+          (click)="activeTab = 'RECLAMATION'">
+    📢 Réclamations
+    <span class="tab-count">{{ countType('RECLAMATION') }}</span>
+  </button>
+</div>
 
-  <!-- Tabs -->
-  <ul class="nav nav-tabs mb-4">
-    <li class="nav-item">
-      <a class="nav-link" [class.active]="activeTab === 'en_cours'"
-         (click)="activeTab = 'en_cours'" style="cursor:pointer;">
-        🕐 En cours
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" [class.active]="activeTab === 'traite'"
-         (click)="activeTab = 'traite'" style="cursor:pointer;">
-        ✅ Traitées
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" [class.active]="activeTab === 'rejete'"
-         (click)="activeTab = 'rejete'" style="cursor:pointer;">
-        ❌ Rejetées
-      </a>
-    </li>
-  </ul>
+<!-- CHARGEMENT -->
+<div *ngIf="loading" class="hist-loading">
+  <span class="spinner"></span> Chargement…
+</div>
 
-  <!-- Tableau commun -->
-  <div class="table-responsive">
-    <table class="table table-bordered table-hover">
-      <thead style="background-color: #de7b3b; color: white;">
-        <tr>
-          <th>ID</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Date</th>
-          <th>Statut</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let d of getDemandes()">
-          <td>{{ d.idDemande }}</td>
-          <td>{{ d.type }}</td>
-          <td>{{ d.description }}</td>
-          <td>{{ d.dateDemande }}</td>
-          <td>
-            <span class="badge"
-              [ngClass]="{
-                'bg-warning text-dark': activeTab === 'en_cours',
-                'bg-success': activeTab === 'traite',
-                'bg-danger': activeTab === 'rejete'
-              }">
-              {{ activeTab === 'en_cours' ? 'EN COURS' : activeTab === 'traite' ? 'TRAITÉ' : 'REJETÉ' }}
-            </span>
-          </td>
-          <td>
-            <!-- Modifier/Supprimer seulement pour EN COURS -->
-            <button class="btn btn-sm btn-warning me-1" *ngIf="activeTab === 'en_cours'" (click)="modifier(d)">
-              Modifier
-            </button>
-            <button class="btn btn-sm btn-danger me-1" *ngIf="activeTab === 'en_cours'" (click)="supprimer(d.idDemande)">
-              Supprimer
-            </button>
-            <!-- Info disponible pour tous -->
-            <button class="btn btn-sm btn-info text-white" (click)="voirInfo(d)">
-              Info
-            </button>
-          </td>
-        </tr>
-        <tr *ngIf="getDemandes().length === 0">
-          <td colspan="6" class="text-center text-muted">Aucune demande</td>
-        </tr>
-      </tbody>
-    </table>
+<!-- ERREUR -->
+<div *ngIf="erreur && !loading" class="demande-alert demande-alert-error">{{ erreur }}</div>
+
+<!-- LISTE -->
+<div *ngIf="!loading && !erreur">
+
+  <!-- Vide -->
+  <div *ngIf="demandesFiltrees().length === 0" class="empty-section">
+    <div class="empty-icon-text">📭</div>
+    <p>Aucune demande trouvée</p>
   </div>
 
-  <!-- Modal Info -->
-  <div class="modal fade show d-block" *ngIf="selectedDemande" style="background: rgba(0,0,0,0.5);">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header" style="background-color: #de7b3b;">
-          <h5 class="modal-title text-white">Détails de la demande</h5>
-          <button class="btn-close" (click)="selectedDemande = null"></button>
+  <!-- Cartes -->
+  <div class="hist-list" *ngIf="demandesFiltrees().length > 0">
+    <div class="hist-card" *ngFor="let d of demandesFiltrees()"
+         (click)="voirDetail(d)">
+
+      <div class="hist-card-left">
+        <div class="hist-type-icon">{{ getTypeIcon(d.typeDemande) }}</div>
+      </div>
+
+      <div class="hist-card-body">
+        <div class="hist-card-top">
+          <span class="hist-type-label">{{ getTypeLabel(d.typeDemande) }}</span>
+          <span class="badge" [ngClass]="getStatutClass(d.statut)">
+            {{ getStatutLabel(d.statut) }}
+          </span>
         </div>
-        <div class="modal-body">
-          <p><strong>ID :</strong> {{ selectedDemande.idDemande }}</p>
-          <p><strong>Type :</strong> {{ selectedDemande.type }}</p>
-          <p><strong>Description :</strong> {{ selectedDemande.description }}</p>
-          <p><strong>Date :</strong> {{ selectedDemande.dateDemande }}</p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="selectedDemande = null">Fermer</button>
+        <p class="hist-desc">{{ d.description }}</p>
+        <div class="hist-card-meta">
+          <span>🏢 {{ d.departement?.nomDepartement || '—' }}</span>
+          <span>📅 {{ (d.dateCreation || d.dateSoumission) | date:'dd/MM/yyyy' }}</span>
+          <span *ngIf="d.typeRequete">Type : {{ d.typeRequete }}</span>
+          <span *ngIf="d.typeProposition">Type : {{ d.typeProposition }}</span>
+          <span *ngIf="d.typeReclamation">Type : {{ d.typeReclamation }}</span>
+          <span *ngIf="d.niveauUrgence" class="urgence-{{ d.niveauUrgence | lowercase }}">
+            🔴 Urgence : {{ d.niveauUrgence }}
+          </span>
         </div>
       </div>
+
+      <div class="hist-card-actions" (click)="$event.stopPropagation()">
+        <button class="btn-table btn-info" (click)="voirDetail(d)">👁 Voir</button>
+        <button class="btn-table btn-danger" (click)="supprimer(d)">🗑</button>
+      </div>
+
     </div>
   </div>
+</div>
 
+<!-- MODAL DÉTAIL -->
+<div class="modal-overlay" *ngIf="selectedDemande" (click)="fermerDetail()">
+  <div class="modal-card" (click)="$event.stopPropagation()" style="max-width:520px;">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 class="modal-title" style="margin:0;">
+        {{ getTypeIcon(selectedDemande.typeDemande) }} Détail — {{ getTypeLabel(selectedDemande.typeDemande) }}
+      </h3>
+      <button class="btn-table btn-gray" (click)="fermerDetail()">✕</button>
+    </div>
+
+    <div class="profil-infos">
+      <div class="profil-info-row">
+        <span class="profil-info-label">Statut</span>
+        <span class="badge" [ngClass]="getStatutClass(selectedDemande.statut)">
+          {{ getStatutLabel(selectedDemande.statut) }}
+        </span>
+      </div>
+      <div class="profil-info-row">
+        <span class="profil-info-label">Département</span>
+        <span class="profil-info-value">{{ selectedDemande.departement?.nomDepartement || '—' }}</span>
+      </div>
+      <div class="profil-info-row">
+        <span class="profil-info-label">Description</span>
+        <span class="profil-info-value">{{ selectedDemande.description }}</span>
+      </div>
+      <div class="profil-info-row" *ngIf="selectedDemande.typeRequete">
+        <span class="profil-info-label">Type requête</span>
+        <span class="profil-info-value">{{ selectedDemande.typeRequete }}</span>
+      </div>
+      <div class="profil-info-row" *ngIf="selectedDemande.typeProposition">
+        <span class="profil-info-label">Type proposition</span>
+        <span class="profil-info-value">{{ selectedDemande.typeProposition }}</span>
+      </div>
+      <div class="profil-info-row" *ngIf="selectedDemande.typeReclamation">
+        <span class="profil-info-label">Type réclamation</span>
+        <span class="profil-info-value">{{ selectedDemande.typeReclamation }}</span>
+      </div>
+      <div class="profil-info-row" *ngIf="selectedDemande.niveauUrgence">
+        <span class="profil-info-label">Urgence</span>
+        <span class="profil-info-value">{{ selectedDemande.niveauUrgence }}</span>
+      </div>
+      <div class="profil-info-row">
+        <span class="profil-info-label">Date</span>
+        <span class="profil-info-value">
+          {{ (selectedDemande.dateCreation || selectedDemande.dateSoumission) | date:'dd/MM/yyyy HH:mm' }}
+        </span>
+      </div>
+      <div class="profil-info-row" *ngIf="selectedDemande.cheminFichier">
+        <span class="profil-info-label">Pièce jointe</span>
+        <a class="profil-info-value"
+           [href]="'http://localhost:8082/' + selectedDemande.cheminFichier"
+           target="_blank">📎 Voir le fichier</a>
+      </div>
+      <div class="profil-info-row" *ngIf="selectedDemande.commentaireTraitement">
+        <span class="profil-info-label">Commentaire</span>
+        <span class="profil-info-value">{{ selectedDemande.commentaireTraitement }}</span>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+      <button class="btn-table btn-gray" (click)="fermerDetail()">Fermer</button>
+    </div>
+
+  </div>
 </div>
