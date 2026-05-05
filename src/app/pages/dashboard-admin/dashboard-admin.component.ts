@@ -34,6 +34,32 @@ export class DashboardAdminComponent implements OnInit {
   showModalPermissions  = false;
   rolePermissionsAffiche: any = null;
   permissionsRoleAffiche: any[] = [];
+  // ✅ Variable pièce jointe
+pieceJointe: File | null = null;
+
+// ✅ Quand l'utilisateur choisit un fichier
+onFichierChange(event: any) {
+  const file = event.target.files[0];
+  if (file) {
+    // Max 10 MB
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Fichier trop volumineux ! Maximum 10 MB.');
+      return;
+    }
+    this.pieceJointe = file;
+  }
+}
+
+// ✅ Icône selon le type de fichier
+getFileIcon(): string {
+  if (!this.pieceJointe) return '📁';
+  const type = this.pieceJointe.type;
+  if (type.startsWith('image/')) return '🖼️';
+  if (type === 'application/pdf') return '📄';
+  if (type.includes('word')) return '📝';
+  if (type.includes('excel') || type.includes('spreadsheet')) return '📊';
+  return '📎';
+}
 
   // ✅ Variables modal métiers département
   showModalMetiers = false;
@@ -366,7 +392,7 @@ export class DashboardAdminComponent implements OnInit {
     };
   }
 
-  soumettredemande() {
+ soumettredemande() {
     this.demandeError = '';
     this.demandeSuccess = '';
     const d = this.nouvelleDemande;
@@ -389,6 +415,7 @@ export class DashboardAdminComponent implements OnInit {
     const onDone = (msg: string) => {
       this.demandeSuccess = msg;
       this.demandeSubmitting = false;
+      this.pieceJointe = null;        // ✅ reset fichier
       this.selectedIdMetier = null;
       this.departementsFiltre = [];
       this.nouvelleDemande = {
@@ -407,7 +434,9 @@ export class DashboardAdminComponent implements OnInit {
         description: d.description,
         typeRequete: d.typeRequete,
         departement: d.departement
-      }).subscribe({ next: () => onDone('Requête soumise avec succès !'), error: onErr });
+      }, this.pieceJointe ?? undefined).subscribe({        // ✅
+        next: () => onDone('Requête soumise avec succès !'), error: onErr
+      });
 
     } else if (this.demandeTypeSelectionne === 'RECLAMATION') {
       this.reclamationService.save({
@@ -415,14 +444,18 @@ export class DashboardAdminComponent implements OnInit {
         typeReclamation: d.typeReclamation,
         niveauUrgence: d.niveauUrgence,
         departement: d.departement
-      }).subscribe({ next: () => onDone('Réclamation soumise avec succès !'), error: onErr });
+      }, this.pieceJointe ?? undefined).subscribe({        // ✅
+        next: () => onDone('Réclamation soumise avec succès !'), error: onErr
+      });
 
     } else if (this.demandeTypeSelectionne === 'PROPOSITION') {
       this.propositionService.save({
         description: d.description,
         typeProposition: d.typeProposition,
         departement: d.departement
-      }).subscribe({ next: () => onDone('Proposition soumise avec succès !'), error: onErr });
+      }, this.pieceJointe ?? undefined).subscribe({        // ✅
+        next: () => onDone('Proposition soumise avec succès !'), error: onErr
+      });
 
     } else {
       this.demandeSubmitting = false;
