@@ -41,4 +41,13 @@ export class PropositionService {
   delete(id: number) {
     return this.http.delete(`${this.baseUrl}/${id}`, { headers: this.getAuthHeaders() });
   }
+  getEtat(id: number) {
+    return this.http.get<string>(`${this.baseUrl}/${id}/etat`, 
+        { headers: this.getAuthHeaders(), responseType: 'text' as 'json' });
+}
+
+confirmerSoumission(id: number) {
+    return this.http.put(`${this.baseUrl}/${id}/statut/2`, {}, 
+        { headers: this.getAuthHeaders() });
+}
 }

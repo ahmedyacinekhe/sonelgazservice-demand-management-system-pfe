@@ -392,75 +392,63 @@ getFileIcon(): string {
     };
   }
 
- soumettredemande() {
-    this.demandeError = '';
-    this.demandeSuccess = '';
-    const d = this.nouvelleDemande;
+soumettredemande() {
+  this.demandeError = '';
+  this.demandeSuccess = '';
+  const d = this.nouvelleDemande;
 
-    if (!d.description?.trim()) { this.demandeError = 'La description est obligatoire.'; return; }
-    if (!d.departement) { this.demandeError = 'Veuillez choisir un métier et un département.'; return; }
-
-    if (this.demandeTypeSelectionne === 'REQUETE' && !d.typeRequete) {
-      this.demandeError = 'Veuillez choisir un type de requête.'; return;
-    }
-    if (this.demandeTypeSelectionne === 'RECLAMATION' && (!d.typeReclamation || !d.niveauUrgence)) {
-      this.demandeError = 'Veuillez choisir le type de réclamation et le niveau d\'urgence.'; return;
-    }
-    if (this.demandeTypeSelectionne === 'PROPOSITION' && !d.typeProposition) {
-      this.demandeError = 'Veuillez choisir un type de proposition.'; return;
-    }
-
-    this.demandeSubmitting = true;
-
-    const onDone = (msg: string) => {
-      this.demandeSuccess = msg;
-      this.demandeSubmitting = false;
-      this.pieceJointe = null;        // ✅ reset fichier
-      this.selectedIdMetier = null;
-      this.departementsFiltre = [];
-      this.nouvelleDemande = {
-        description: '', typeRequete: '', typeReclamation: '',
-        niveauUrgence: '', typeProposition: '', departement: null
-      };
-      this.demandeTypeSelectionne = '';
-    };
-    const onErr = () => {
-      this.demandeError = 'Erreur lors de la soumission. Réessayez.';
-      this.demandeSubmitting = false;
-    };
-
-    if (this.demandeTypeSelectionne === 'REQUETE') {
-      this.requeteService.save({
-        description: d.description,
-        typeRequete: d.typeRequete,
-        departement: d.departement
-      }, this.pieceJointe ?? undefined).subscribe({        // ✅
-        next: () => onDone('Requête soumise avec succès !'), error: onErr
-      });
-
-    } else if (this.demandeTypeSelectionne === 'RECLAMATION') {
-      this.reclamationService.save({
-        description: d.description,
-        typeReclamation: d.typeReclamation,
-        niveauUrgence: d.niveauUrgence,
-        departement: d.departement
-      }, this.pieceJointe ?? undefined).subscribe({        // ✅
-        next: () => onDone('Réclamation soumise avec succès !'), error: onErr
-      });
-
-    } else if (this.demandeTypeSelectionne === 'PROPOSITION') {
-      this.propositionService.save({
-        description: d.description,
-        typeProposition: d.typeProposition,
-        departement: d.departement
-      }, this.pieceJointe ?? undefined).subscribe({        // ✅
-        next: () => onDone('Proposition soumise avec succès !'), error: onErr
-      });
-
-    } else {
-      this.demandeSubmitting = false;
-    }
+  if (!d.description?.trim()) { this.demandeError = 'La description est obligatoire.'; return; }
+  if (!d.departement) { this.demandeError = 'Veuillez choisir un métier et un département.'; return; }
+  if (this.demandeTypeSelectionne === 'REQUETE' && !d.typeRequete) {
+    this.demandeError = 'Veuillez choisir un type de requête.'; return;
   }
+  if (this.demandeTypeSelectionne === 'RECLAMATION' && (!d.typeReclamation || !d.niveauUrgence)) {
+    this.demandeError = 'Veuillez choisir le type de réclamation et le niveau d\'urgence.'; return;
+  }
+  if (this.demandeTypeSelectionne === 'PROPOSITION' && !d.typeProposition) {
+    this.demandeError = 'Veuillez choisir un type de proposition.'; return;
+  }
+
+  this.demandeSubmitting = true;
+
+  const onDone = () => {
+    this.demandeSubmitting = false;
+    this.pieceJointe = null;
+    this.selectedIdMetier = null;
+    this.departementsFiltre = [];
+    this.nouvelleDemande = {
+      description: '', typeRequete: '', typeReclamation: '',
+      niveauUrgence: '', typeProposition: '', departement: null
+    };
+    // ✅ NE PAS remettre demandeTypeSelectionne = '' ici
+    this.demandeSuccess = '✅ Votre demande a été enregistrée en brouillon.\n📝 Vous pouvez la modifier à tout moment depuis l\'Historique.\n⚠️ Elle ne sera pas traitée tant qu\'elle n\'est pas confirmée.';
+  };
+
+  const onErr = () => {
+    this.demandeError = 'Erreur lors de la soumission. Réessayez.';
+    this.demandeSubmitting = false;
+  };
+
+  if (this.demandeTypeSelectionne === 'REQUETE') {
+    this.requeteService.save({
+      description: d.description, typeRequete: d.typeRequete, departement: d.departement
+    }, this.pieceJointe ?? undefined).subscribe({ next: onDone, error: onErr });
+
+  } else if (this.demandeTypeSelectionne === 'RECLAMATION') {
+    this.reclamationService.save({
+      description: d.description, typeReclamation: d.typeReclamation,
+      niveauUrgence: d.niveauUrgence, departement: d.departement
+    }, this.pieceJointe ?? undefined).subscribe({ next: onDone, error: onErr });
+
+  } else if (this.demandeTypeSelectionne === 'PROPOSITION') {
+    this.propositionService.save({
+      description: d.description, typeProposition: d.typeProposition, departement: d.departement
+    }, this.pieceJointe ?? undefined).subscribe({ next: onDone, error: onErr });
+
+  } else {
+    this.demandeSubmitting = false;
+  }
+}
 
   annulerDemandeForm() {
     this.demandeTypeSelectionne = '';

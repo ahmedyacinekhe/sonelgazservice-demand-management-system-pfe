@@ -272,7 +272,9 @@
             </div>
 
             <div class="demande-alert demande-alert-error" *ngIf="demandeError">{{ demandeError }}</div>
-            <div class="demande-alert demande-alert-success" *ngIf="demandeSuccess">{{ demandeSuccess }}</div>
+<div class="demande-alert demande-alert-success" *ngIf="demandeSuccess" style="white-space: pre-line; line-height: 1.8;">
+  {{ demandeSuccess }}
+</div>
           </div>
 
           <div class="demande-actions-bar">

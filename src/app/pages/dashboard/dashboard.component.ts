@@ -350,18 +350,18 @@ export class DashboardComponent implements OnInit {
 
     this.demandeSubmitting = true;
 
-    const onDone = (msg: string) => {
-      this.demandeSuccess = msg;
-      this.demandeSubmitting = false;
-      this.nouvelleDemande = {
-        description: '',
-        typeRequete: '',
-        typeReclamation: '',
-        niveauUrgence: '',
-        typeProposition: ''
-      };
-      this.demandeTypeSelectionne = '';
-    };
+    const onDone = () => {
+  this.demandeSuccess = '✅ Votre demande a été enregistrée en brouillon.\n📝 Vous pouvez la modifier à tout moment depuis l\'Historique.\n⚠️ Elle ne sera pas traitée tant qu\'elle n\'est pas confirmée.';
+  this.demandeSubmitting = false;
+  this.nouvelleDemande = {
+    description: '',
+    typeRequete: '',
+    typeReclamation: '',
+    niveauUrgence: '',
+    typeProposition: ''
+  };
+  // ❌ NE PAS remettre demandeTypeSelectionne = '' ici
+};
 
     const onErr = () => {
       this.demandeError = 'Erreur lors de la soumission. Réessayez.';
@@ -370,7 +370,7 @@ export class DashboardComponent implements OnInit {
 
     if (this.demandeTypeSelectionne === 'REQUETE') {
       this.requeteService.save({ description: d.description, typeRequete: d.typeRequete }).subscribe({
-        next: () => onDone('Requête soumise avec succès !'),
+        next: () => onDone(),
         error: onErr
       });
     } else if (this.demandeTypeSelectionne === 'RECLAMATION') {
@@ -379,12 +379,12 @@ export class DashboardComponent implements OnInit {
         typeReclamation: d.typeReclamation,
         niveauUrgence: d.niveauUrgence
       }).subscribe({
-        next: () => onDone('Réclamation soumise avec succès !'),
+        next: () => onDone(),
         error: onErr
       });
     } else if (this.demandeTypeSelectionne === 'PROPOSITION') {
       this.propositionService.save({ description: d.description, typeProposition: d.typeProposition }).subscribe({
-        next: () => onDone('Proposition soumise avec succès !'),
+        next: () => onDone(),
         error: onErr
       });
     } else {

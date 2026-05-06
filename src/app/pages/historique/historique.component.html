@@ -62,7 +62,7 @@
         <p class="hist-desc">{{ d.description }}</p>
         <div class="hist-card-meta">
           <span>🏢 {{ d.departement?.nomDepartement || '—' }}</span>
-          <span>📅 {{ (d.dateCreation || d.dateSoumission) | date:'dd/MM/yyyy' }}</span>
+          <span>📅 {{ (d.dateDemande || d.dateCreation || d.dateSoumission) | date:'dd/MM/yyyy' }}</span>
           <span *ngIf="d.typeRequete">Type : {{ d.typeRequete }}</span>
           <span *ngIf="d.typeProposition">Type : {{ d.typeProposition }}</span>
           <span *ngIf="d.typeReclamation">Type : {{ d.typeReclamation }}</span>
@@ -73,8 +73,8 @@
       </div>
 
       <div class="hist-card-actions" (click)="$event.stopPropagation()">
-        <button class="btn-table btn-info" (click)="voirDetail(d)">👁 Voir</button>
-        <button class="btn-table btn-danger" (click)="supprimer(d)">🗑</button>
+        <button class="btn-table btn-info"   (click)="voirDetail(d)">Voir</button>
+        <button class="btn-table btn-danger" (click)="supprimer(d)">Supprimer</button>
       </div>
 
     </div>
@@ -126,7 +126,7 @@
       <div class="profil-info-row">
         <span class="profil-info-label">Date</span>
         <span class="profil-info-value">
-          {{ (selectedDemande.dateCreation || selectedDemande.dateSoumission) | date:'dd/MM/yyyy HH:mm' }}
+          {{ (selectedDemande.dateDemande || selectedDemande.dateCreation || selectedDemande.dateSoumission) | date:'dd/MM/yyyy HH:mm' }}
         </span>
       </div>
       <div class="profil-info-row" *ngIf="selectedDemande.cheminFichier">
@@ -141,7 +141,37 @@
       </div>
     </div>
 
-    <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+    <!-- ✅ MESSAGE SOUMISSION -->
+    <div *ngIf="messageSoumission"
+         class="demande-alert"
+         [ngClass]="{
+           'demande-alert-success': messageType === 'success',
+           'demande-alert-info':    messageType === 'info',
+           'demande-alert-error':   messageType === 'error'
+         }"
+         style="margin-top:16px;">
+      {{ messageSoumission }}
+    </div>
+
+    <!-- ✅ BOUTONS SOUMISSION (seulement si BROUILLON) -->
+    <div *ngIf="estBrouillon(selectedDemande)"
+         style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
+      <button class="btn-table btn-warn" (click)="soumettreBrouillon(selectedDemande)">
+        📝 Garder en brouillon
+      </button>
+      <button class="btn-action" (click)="confirmerSoumission(selectedDemande)">
+        ✅ Confirmer la soumission
+      </button>
+    </div>
+
+    <!-- ✅ MESSAGE si déjà confirmée -->
+    <div *ngIf="!estBrouillon(selectedDemande)"
+         style="margin-top:16px; padding:10px 14px; background:#e3f0ff; color:#1565c0;
+                border-left:4px solid #1565c0; border-radius:6px; font-size:13px;">
+      🔒 Cette demande a été soumise et ne peut plus être modifiée.
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; margin-top:16px;">
       <button class="btn-table btn-gray" (click)="fermerDetail()">Fermer</button>
     </div>
 
