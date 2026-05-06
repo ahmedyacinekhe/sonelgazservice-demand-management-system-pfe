@@ -69,6 +69,7 @@ com\pfe\pfe\entity\DepartementMetierId.class
 com\pfe\pfe\security\JwtFilter.class
 com\pfe\pfe\entity\Utilisateur.class
 com\pfe\pfe\controller\PermissionController.class
+com\pfe\pfe\entity\DemandeResponse.class
 com\pfe\pfe\controller\EtatDemandeController.class
 com\pfe\pfe\controller\RoleUtilisateurController.class
 com\pfe\pfe\controller\RoleController.class

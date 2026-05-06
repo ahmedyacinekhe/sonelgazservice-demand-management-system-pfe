@@ -14,4 +14,6 @@ public interface RoleUtilisateurRepository extends JpaRepository<RoleUtilisateur
 List<RoleUtilisateur> findByRoleUtilisateurId_IdUtil(int id);
 @Transactional
 void deleteByRoleUtilisateurId_IdUtil(int idUtil);
+@Transactional
+void deleteByRoleUtilisateurId_IdRole(int idRole);
 }

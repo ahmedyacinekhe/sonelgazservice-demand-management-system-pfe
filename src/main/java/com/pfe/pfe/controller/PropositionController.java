@@ -16,20 +16,23 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.pfe.pfe.entity.Proposition;
-import com.pfe.pfe.entity.Utilisateur;
+import com.pfe.pfe.entity.*;
 import com.pfe.pfe.repository.UtilisateurRepository;
 import com.pfe.pfe.service.PropositionService;
+
+import jakarta.transaction.Transactional;
+
+import com.pfe.pfe.service.DemandeEtatDetailService;
+import com.pfe.pfe.repository.DemandeEtatDetailRepository;
 
 @RestController
 @RequestMapping("/Api/propositions")
 public class PropositionController {
 
-    @Autowired
-    private PropositionService propositionService;
-
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
+    @Autowired private PropositionService propositionService;
+    @Autowired private UtilisateurRepository utilisateurRepository;
+    @Autowired private DemandeEtatDetailService demandeEtatDetailService;
+    @Autowired private DemandeEtatDetailRepository demandeEtatDetailRepository;
 
     @GetMapping
     public List<Proposition> findAll() {
@@ -61,16 +64,67 @@ public class PropositionController {
             proposition.setPieceJointe(nomFichier);
         }
 
+        Proposition saved = propositionService.save(proposition);
+
+        // ✅ Statut BROUILLON automatique (id_etat = 1)
+        DemandeEtatDetail etatDetail = new DemandeEtatDetail();
+        DemandeEtatDetailId etatId = new DemandeEtatDetailId();
+        etatId.setIdDemande(saved.getIdDemande());
+        etatId.setIdEtat(1); // BROUILLON
+        etatDetail.setDemandeEtatDetailId(etatId);
+        etatDetail.setDateEtat(new java.sql.Date(System.currentTimeMillis()));
+        demandeEtatDetailService.save(etatDetail);
+
+        return saved;
+    }
+
+    // ✅ Modifier une demande BROUILLON (avec fichier)
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Proposition updateWithFile(
+            @PathVariable int id,
+            @RequestPart("data") Proposition proposition,
+            @RequestPart(value = "fichier", required = false) MultipartFile fichier) throws IOException {
+
+        if (fichier != null && !fichier.isEmpty()) {
+            String nomFichier = UUID.randomUUID() + "_" + fichier.getOriginalFilename();
+            Path chemin = Paths.get("uploads/" + nomFichier);
+            new File("uploads/").mkdirs();
+            Files.copy(fichier.getInputStream(), chemin, StandardCopyOption.REPLACE_EXISTING);
+            proposition.setPieceJointe(nomFichier);
+        }
         return propositionService.save(proposition);
     }
 
-    @PutMapping("/{id}")
+    // ✅ Modifier sans fichier (JSON simple)
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Proposition update(@PathVariable int id, @RequestBody Proposition proposition) {
         return propositionService.save(proposition);
     }
 
-    @DeleteMapping("/{id}")
-    public void deleteById(@PathVariable int id) {
-        propositionService.deleteById(id);
+    // ✅ Changer le statut : BROUILLON → EN_ATTENTE
+    @PutMapping("/{id}/statut/{idEtat}")
+    public void changerStatut(@PathVariable int id, @PathVariable int idEtat) {
+        demandeEtatDetailRepository.deleteByIdDemande(id);
+
+        DemandeEtatDetail etatDetail = new DemandeEtatDetail();
+        DemandeEtatDetailId etatDetailId = new DemandeEtatDetailId();
+        etatDetailId.setIdDemande(id);
+        etatDetailId.setIdEtat(idEtat);
+        etatDetail.setDemandeEtatDetailId(etatDetailId);
+        etatDetail.setDateEtat(new java.sql.Date(System.currentTimeMillis()));
+        demandeEtatDetailService.save(etatDetail);
     }
+
+    @DeleteMapping("/{id}")
+@Transactional
+public void deleteById(@PathVariable int id) {
+    demandeEtatDetailRepository.deleteByIdDemande(id);
+    propositionService.deleteById(id);
+}
+@GetMapping("/{id}/etat")
+public String getEtat(@PathVariable int id) {
+    List<DemandeEtatDetail> etats = demandeEtatDetailRepository.findByIdDemande(id);
+    if (etats.isEmpty()) return "INCONNU";
+    return etats.get(0).getEtatDemande().getLibelleEtat();
+}
 }

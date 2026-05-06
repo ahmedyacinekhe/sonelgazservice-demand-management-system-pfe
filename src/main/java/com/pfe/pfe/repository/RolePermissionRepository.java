@@ -7,8 +7,12 @@ import org.springframework.stereotype.Repository;
 import com.pfe.pfe.entity.RolePermission;
 import com.pfe.pfe.entity.RolePermissionId;
 
+import jakarta.transaction.Transactional;
+
 @Repository
 public interface RolePermissionRepository extends JpaRepository<RolePermission, RolePermissionId> {
     List<RolePermission> findByRolePermissionId_IdRole(int idRole);
     List<RolePermission> findByRolePermissionIdIdRole(Long roleId);
+    @Transactional
+void deleteByRolePermissionId_IdRole(int idRole);
 }

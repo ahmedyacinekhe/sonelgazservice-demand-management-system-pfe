@@ -1,36 +1,38 @@
 package com.pfe.pfe.controller;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import org.springframework.http.MediaType;
-import com.pfe.pfe.entity.Reclamation;
-import com.pfe.pfe.entity.Utilisateur;
+import com.pfe.pfe.entity.*;
 import com.pfe.pfe.repository.UtilisateurRepository;
 import com.pfe.pfe.service.ReclamationService;
+
+import jakarta.transaction.Transactional;
+
+import com.pfe.pfe.service.DemandeEtatDetailService;
+import com.pfe.pfe.repository.DemandeEtatDetailRepository;
 
 @RestController
 @RequestMapping("/Api/reclamations")
 public class ReclamationController {
 
-    @Autowired
-    private ReclamationService reclamationService;
-
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
+    @Autowired private ReclamationService reclamationService;
+    @Autowired private UtilisateurRepository utilisateurRepository;
+    @Autowired private DemandeEtatDetailService demandeEtatDetailService;
+    @Autowired private DemandeEtatDetailRepository demandeEtatDetailRepository;
 
     @GetMapping
     public List<Reclamation> findAll() {
@@ -42,48 +44,87 @@ public class ReclamationController {
         return reclamationService.findById(id);
     }
 
-    @PostMapping
-    public Reclamation save(@RequestBody Reclamation reclamation,
-                            @AuthenticationPrincipal UserDetails userDetails) {
-        // Date automatique
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Reclamation save(
+            @RequestPart("data") Reclamation reclamation,
+            @RequestPart(value = "fichier", required = false) MultipartFile fichier,
+            @AuthenticationPrincipal UserDetails userDetails) throws IOException {
+
         reclamation.setDateDemande(new java.sql.Date(System.currentTimeMillis()));
 
-        // Récupérer l'utilisateur connecté
-        Utilisateur utilisateur = utilisateurRepository.findByEmailUtil(userDetails.getUsername()).orElse(null);
+        Utilisateur utilisateur = utilisateurRepository
+                .findByEmailUtil(userDetails.getUsername()).orElse(null);
         reclamation.setUtilisateur(utilisateur);
 
+        if (fichier != null && !fichier.isEmpty()) {
+            String nomFichier = UUID.randomUUID() + "_" + fichier.getOriginalFilename();
+            Path chemin = Paths.get("uploads/" + nomFichier);
+            new File("uploads/").mkdirs();
+            Files.copy(fichier.getInputStream(), chemin, StandardCopyOption.REPLACE_EXISTING);
+            reclamation.setPieceJointe(nomFichier);
+        }
+
+        Reclamation saved = reclamationService.save(reclamation);
+
+        // ✅ Statut BROUILLON automatique (id_etat = 1)
+        DemandeEtatDetail etatDetail = new DemandeEtatDetail();
+        DemandeEtatDetailId etatId = new DemandeEtatDetailId();
+        etatId.setIdDemande(saved.getIdDemande());
+        etatId.setIdEtat(1); // BROUILLON
+        etatDetail.setDemandeEtatDetailId(etatId);
+        etatDetail.setDateEtat(new java.sql.Date(System.currentTimeMillis()));
+        demandeEtatDetailService.save(etatDetail);
+
+        return saved;
+    }
+
+    // ✅ Modifier une demande BROUILLON (avec fichier)
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Reclamation updateWithFile(
+            @PathVariable int id,
+            @RequestPart("data") Reclamation reclamation,
+            @RequestPart(value = "fichier", required = false) MultipartFile fichier) throws IOException {
+
+        if (fichier != null && !fichier.isEmpty()) {
+            String nomFichier = UUID.randomUUID() + "_" + fichier.getOriginalFilename();
+            Path chemin = Paths.get("uploads/" + nomFichier);
+            new File("uploads/").mkdirs();
+            Files.copy(fichier.getInputStream(), chemin, StandardCopyOption.REPLACE_EXISTING);
+            reclamation.setPieceJointe(nomFichier);
+        }
         return reclamationService.save(reclamation);
     }
 
-    @PutMapping("/{id}")
+    // ✅ Modifier sans fichier (JSON simple)
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Reclamation update(@PathVariable int id, @RequestBody Reclamation reclamation) {
         return reclamationService.save(reclamation);
     }
 
+    // ✅ Changer le statut : BROUILLON → EN_ATTENTE
+    @PutMapping("/{id}/statut/{idEtat}")
+    public void changerStatut(@PathVariable int id, @PathVariable int idEtat) {
+        demandeEtatDetailRepository.deleteByIdDemande(id);
+
+        DemandeEtatDetail etatDetail = new DemandeEtatDetail();
+        DemandeEtatDetailId etatDetailId = new DemandeEtatDetailId();
+        etatDetailId.setIdDemande(id);
+        etatDetailId.setIdEtat(idEtat);
+        etatDetail.setDemandeEtatDetailId(etatDetailId);
+        etatDetail.setDateEtat(new java.sql.Date(System.currentTimeMillis()));
+        demandeEtatDetailService.save(etatDetail);
+    }
+
     @DeleteMapping("/{id}")
-    public void deleteById(@PathVariable int id) {
-        reclamationService.deleteById(id);
-    }
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-public Reclamation save(
-        @RequestPart("data") @org.springframework.web.bind.annotation.RequestBody Reclamation reclamation,
-        @RequestPart(value = "fichier", required = false) MultipartFile fichier,
-        @AuthenticationPrincipal UserDetails userDetails) throws java.io.IOException {
-
-    reclamation.setDateDemande(new java.sql.Date(System.currentTimeMillis()));
-    Utilisateur utilisateur = utilisateurRepository.findByEmailUtil(userDetails.getUsername()).orElse(null);
-    reclamation.setUtilisateur(utilisateur);
-
-    // ✅ Sauvegarder le fichier si présent
-    if (fichier != null && !fichier.isEmpty()) {
-        String nomFichier = java.util.UUID.randomUUID() + "_" + fichier.getOriginalFilename();
-        java.nio.file.Path chemin = java.nio.file.Paths.get("uploads/" + nomFichier);
-        new java.io.File("uploads/").mkdirs();
-        java.nio.file.Files.copy(fichier.getInputStream(), chemin,
-            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        reclamation.setPieceJointe(nomFichier);
-    }
-
-    return reclamationService.save(reclamation);
+@Transactional
+public void deleteById(@PathVariable int id) {
+    demandeEtatDetailRepository.deleteByIdDemande(id);
+    reclamationService.deleteById(id);
+}
+@GetMapping("/{id}/etat")
+public String getEtat(@PathVariable int id) {
+    List<DemandeEtatDetail> etats = demandeEtatDetailRepository.findByIdDemande(id);
+    if (etats.isEmpty()) return "INCONNU";
+    return etats.get(0).getEtatDemande().getLibelleEtat();
 }
 }
