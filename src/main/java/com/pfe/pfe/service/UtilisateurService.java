@@ -39,34 +39,32 @@ private RoleUtilisateurRepository roleUtilisateurRepository;
         return utilisateurRepository.save(utilisateur);
     }
 
-    @Transactional
-    public void convertirUtilisateur(int idUtil, String nouveauRole, int idDepartement) {
-        System.out.println("🔍 convertirUtilisateur appelé: idUtil=" + idUtil + ", role=" + nouveauRole + ", dept=" + idDepartement);
-        String nomRole = nouveauRole.toUpperCase();
+   @Transactional
+public void convertirUtilisateur(int idUtil, String nouveauRole, int idDepartement) {
+    String nomRole = nouveauRole.toUpperCase();
 
-        if (nomRole.equals("EMPLOYE") || nomRole.equals("RESPONSABLE") || nomRole.equals("ADMIN")) {
-            // Vérifier si c'est un client
-            Long countClient = (Long) entityManager
-                .createNativeQuery("SELECT COUNT(*) FROM client WHERE id_util = :id")
+    if (nomRole.equals("EMPLOYE") || nomRole.equals("RESPONSABLE") || nomRole.equals("ADMIN")) {
+        
+        // Vérifier si c'est un CLIENT
+        Long countClient = (Long) entityManager
+            .createNativeQuery("SELECT COUNT(*) FROM client WHERE id_util = :id")
+            .setParameter("id", idUtil)
+            .getSingleResult();
+
+        if (countClient > 0) {
+            // ✅ Seulement si c'est un CLIENT → supprimer de client, insérer dans employe
+            entityManager.createNativeQuery("DELETE FROM client WHERE id_util = :id")
                 .setParameter("id", idUtil)
-                .getSingleResult();
+                .executeUpdate();
 
-            if (countClient > 0) {
-                // Supprimer de client
-                entityManager.createNativeQuery("DELETE FROM client WHERE id_util = :id")
-                    .setParameter("id", idUtil)
-                    .executeUpdate();
+            entityManager.createNativeQuery(
+                "INSERT INTO employe (id_util, matricule, is_admin, date_embauche, id_departement) " +
+                "VALUES (:id, 0, false, null, :idDept)")
+                .setParameter("id", idUtil)
+                .setParameter("idDept", idDepartement > 0 ? idDepartement : null)
+                .executeUpdate();
 
-                // Insérer dans employe
-                entityManager.createNativeQuery(
-                    "INSERT INTO employe (id_util, matricule, is_admin, date_embauche, id_departement) " +
-                    "VALUES (:id, 0, false, null, :idDept)")
-                    .setParameter("id", idUtil)
-                    .setParameter("idDept", idDepartement > 0 ? idDepartement : null)
-                    .executeUpdate();
-            }
-
-            // Incrémenter département
+            // ✅ Incrémenter seulement si vient d'un CLIENT
             if (idDepartement > 0) {
                 Departement dept = departementRepository.findById(idDepartement).orElse(null);
                 if (dept != null) {
@@ -75,44 +73,79 @@ private RoleUtilisateurRepository roleUtilisateurRepository;
                 }
             }
 
-        } else if (nomRole.equals("CLIENT")) {
-            // Vérifier si c'est un employé
-            Long countEmploye = (Long) entityManager
-                .createNativeQuery("SELECT COUNT(*) FROM employe WHERE id_util = :id")
+        } else {
+    // C'est déjà un EMPLOYE ou RESPONSABLE → changer de département
+    if (idDepartement > 0) {
+        
+        // Récupérer l'ancien département
+        Object idAncienDeptObj = entityManager
+            .createNativeQuery("SELECT id_departement FROM employe WHERE id_util = :id")
+            .setParameter("id", idUtil)
+            .getSingleResult();
+
+        int idAncienDept = idAncienDeptObj != null ? ((Number) idAncienDeptObj).intValue() : 0;
+
+        // Si le département change vraiment
+        if (idAncienDept != idDepartement) {
+            
+            // Décrémenter l'ancien département
+            if (idAncienDept > 0) {
+                Departement ancienDept = departementRepository.findById(idAncienDept).orElse(null);
+                if (ancienDept != null && ancienDept.getNombreEmployes() > 0) {
+                    ancienDept.setNombreEmployes(ancienDept.getNombreEmployes() - 1);
+                    departementRepository.save(ancienDept);
+                }
+            }
+
+            // Incrémenter le nouveau département
+            Departement nouveauDept = departementRepository.findById(idDepartement).orElse(null);
+            if (nouveauDept != null) {
+                nouveauDept.setNombreEmployes(nouveauDept.getNombreEmployes() + 1);
+                departementRepository.save(nouveauDept);
+            }
+        }
+
+        // Mettre à jour le département dans employe
+        entityManager.createNativeQuery(
+            "UPDATE employe SET id_departement = :idDept WHERE id_util = :id")
+            .setParameter("idDept", idDepartement)
+            .setParameter("id", idUtil)
+            .executeUpdate();
+    }
+}
+    } else if (nomRole.equals("CLIENT")) {
+        Long countEmploye = (Long) entityManager
+            .createNativeQuery("SELECT COUNT(*) FROM employe WHERE id_util = :id")
+            .setParameter("id", idUtil)
+            .getSingleResult();
+
+        if (countEmploye > 0) {
+            Object idAncienDept = entityManager
+                .createNativeQuery("SELECT id_departement FROM employe WHERE id_util = :id")
                 .setParameter("id", idUtil)
                 .getSingleResult();
 
-            if (countEmploye > 0) {
-                // Récupérer l'ancien département
-                Object idAncienDept = entityManager
-                    .createNativeQuery("SELECT id_departement FROM employe WHERE id_util = :id")
-                    .setParameter("id", idUtil)
-                    .getSingleResult();
-
-                // Décrémenter ancien département
-                if (idAncienDept != null) {
-                    int idDept = ((Number) idAncienDept).intValue();
-                    Departement dept = departementRepository.findById(idDept).orElse(null);
-                    if (dept != null && dept.getNombreEmployes() > 0) {
-                        dept.setNombreEmployes(dept.getNombreEmployes() - 1);
-                        departementRepository.save(dept);
-                    }
+            if (idAncienDept != null) {
+                int idDept = ((Number) idAncienDept).intValue();
+                Departement dept = departementRepository.findById(idDept).orElse(null);
+                if (dept != null && dept.getNombreEmployes() > 0) {
+                    dept.setNombreEmployes(dept.getNombreEmployes() - 1);
+                    departementRepository.save(dept);
                 }
-
-                // Supprimer de employe
-                entityManager.createNativeQuery("DELETE FROM employe WHERE id_util = :id")
-                    .setParameter("id", idUtil)
-                    .executeUpdate();
-
-                // Insérer dans client
-                entityManager.createNativeQuery(
-                    "INSERT INTO client (id_util, adresse_client, code_postal, type_client) " +
-                    "VALUES (:id, '', 0, 'PARTICULIER')")
-                    .setParameter("id", idUtil)
-                    .executeUpdate();
             }
+
+            entityManager.createNativeQuery("DELETE FROM employe WHERE id_util = :id")
+                .setParameter("id", idUtil)
+                .executeUpdate();
+
+            entityManager.createNativeQuery(
+                "INSERT INTO client (id_util, adresse_client, code_postal, type_client) " +
+                "VALUES (:id, '', 0, 'PARTICULIER')")
+                .setParameter("id", idUtil)
+                .executeUpdate();
         }
     }
+}
 
    @Transactional
 public void deleteById(int id) {
