@@ -580,45 +580,43 @@ soumettredemande() {
       { headers: this.getHeaders() })
       .subscribe({ next: () => this.loadUtilisateurs(), error: (err) => alert('Erreur: ' + err.status) });
   }
-
-  affecterRole() {
-    if (!this.affectation.idUtil || !this.affectation.idRole) {
-      alert('Choisissez utilisateur et rôle !'); return;
-    }
-    const roleSelectionne = this.roles.find(r => Number(r.idRole) === Number(this.affectation.idRole));
-    const nomRole = roleSelectionne ? roleSelectionne.nomRole : '';
-    const necessiteDepartement = nomRole.toUpperCase() === 'EMPLOYE' || nomRole.toUpperCase() === 'RESPONSABLE';
-    if (necessiteDepartement && !this.affectation.idDepartement) {
-      alert('Veuillez choisir un département pour ce rôle !'); return;
-    }
-    const { idUtil, idRole, idDepartement } = this.affectation;
-    this.http.delete(`${this.baseUrl}/Api/rolesUtilisateurs/utilisateur/${idUtil}`, { headers: this.getHeaders() })
-      .subscribe({
-        next: () => {
-          this.http.post(`${this.baseUrl}/Api/rolesUtilisateurs`,
-            { roleUtilisateurId: { idUtil, idRole } }, { headers: this.getHeaders() })
-            .subscribe({
-              next: () => {
-                this.http.put(
-                  `${this.baseUrl}/Api/utilisateurs/${idUtil}/convertir?nouveauRole=${nomRole}&idDepartement=${idDepartement}`,
-                  {}, { headers: this.getHeaders() })
-                  .subscribe({
-                    next: () => {
-                      this.loadAll();
-                      if (this.departementSelectionne) setTimeout(() => this.voirEmployesDepartement(this.departementSelectionne), 500);
-                      alert('Rôle affecté avec succès !');
-                      this.affectation = { idUtil: 0, idRole: 0, idDepartement: 0 };
-                      this.rechercheAffectation = '';
-                    },
-                    error: () => alert('Rôle affecté mais erreur lors de la conversion !')
-                  });
-              },
-              error: () => alert('Erreur lors de l\'affectation du rôle.')
-            });
-        },
-        error: () => alert('Erreur lors de la suppression de l\'ancien rôle.')
-      });
+affecterRole() {
+  if (!this.affectation.idUtil || !this.affectation.idRole) {
+    alert('Choisissez utilisateur et rôle !'); return;
   }
+
+  const roleSelectionne = this.roles.find(r => Number(r.idRole) === Number(this.affectation.idRole));
+  const nomRole = roleSelectionne ? roleSelectionne.nomRole : '';
+  const necessiteDepartement = nomRole.toUpperCase() === 'EMPLOYE' || 
+                               nomRole.toUpperCase() === 'RESPONSABLE';
+
+  if (necessiteDepartement && !this.affectation.idDepartement) {
+    alert('Veuillez choisir un département pour ce rôle !'); return;
+  }
+
+  const { idUtil, idRole, idDepartement } = this.affectation;
+
+  // ✅ UN SEUL appel qui fait tout : vérification + affectation + conversion
+  this.http.post(
+    `${this.baseUrl}/Api/utilisateurs/${idUtil}/affecter-role?idRole=${idRole}&idDepartement=${idDepartement}`,
+    {},
+    { headers: this.getHeaders(), responseType: 'text' as 'json' }
+  ).subscribe({
+    next: () => {
+      this.loadAll();
+      if (this.departementSelectionne) {
+        setTimeout(() => this.voirEmployesDepartement(this.departementSelectionne), 500);
+      }
+      alert('Rôle affecté avec succès !');
+      this.affectation = { idUtil: 0, idRole: 0, idDepartement: 0 };
+      this.rechercheAffectation = '';
+    },
+    error: (err) => {
+      alert('⚠️ ' + (err.error || 'Erreur lors de l\'affectation du rôle.'));
+    }
+  });
+}
+ 
 
   saveDepartement() {
     if (!this.nouveauDepartement.nomDepartement) { alert('Nom requis !'); return; }
