@@ -14,20 +14,17 @@
         <span class="brand-sub">Gestion des Demandes</span>
       </div>
     </div>
-
     <div class="nav-right">
       <div class="nav-profile" (click)="$event.stopPropagation(); profileMenuOpen = !profileMenuOpen"
            [class.open]="profileMenuOpen">
         <div class="profile-avatar-box">
-          <img src="assets/profile.png" alt="profil" class="avatar-img"
-               (error)="onAvatarError($event)"/>
+          <img src="assets/profile.png" alt="profil" class="avatar-img" (error)="onAvatarError($event)"/>
         </div>
         <div class="profile-info">
           <span class="profile-name">{{ nomUtilisateur }}</span>
           <span class="profile-role">{{ roleUtilisateur }}</span>
         </div>
         <span class="profile-chevron" [class.rotated]="profileMenuOpen">▾</span>
-
         <div class="profile-dropdown" *ngIf="profileMenuOpen" (click)="$event.stopPropagation()">
           <div class="dropdown-header">
             <div class="dropdown-avatar-box">
@@ -120,10 +117,8 @@
         </button>
 
       </div>
-
       <div class="sidebar-footer">
-        <button class="sidebar-profile-btn"
-                (click)="openProfilSection()"
+        <button class="sidebar-profile-btn" (click)="openProfilSection()"
                 [class.active]="activeSection === 'profil'">
           <div class="sidebar-avatar-box">
             <img src="assets/profile.png" alt="profil" (error)="onAvatarError($event)"/>
@@ -147,9 +142,6 @@
           <h4 class="page-title">{{ isAdmin ? 'Tableau de bord — Administration' : 'Tableau de bord' }}</h4>
           <p class="page-subtitle">Bienvenue sur SonelAsk — Gestion des demandes</p>
         </div>
-
-        <!-- Employé : menus fixes (sidebar) = Accueil, Ajouter demande, Historique ; gestion / admin = selon droits. -->
-
         <ng-container *ngIf="showAdministrationBlock">
           <p class="home-section-label">Administration</p>
           <div class="home-cards">
@@ -177,36 +169,34 @@
         </ng-container>
       </div>
 
-      <!-- AJOUTER DEMANDE (tous les profils employé / client hors ADMIN) -->
+      <!-- AJOUTER DEMANDE -->
       <div *ngIf="activeSection === 'demandes' && showEmployeMenus">
         <div class="page-header">
           <h4 class="page-title">📋 Ajouter une demande</h4>
           <p class="page-subtitle">Choisissez le type de demande à soumettre</p>
         </div>
 
-        <!-- Cartes type -->
         <div *ngIf="!demandeTypeSelectionne" class="demande-type-cards">
           <div class="demande-type-card" (click)="selectTypeDemande('PROPOSITION')">
             <div class="demande-type-icon">📋</div>
             <h5 class="demande-type-title">Proposition</h5>
             <p class="demande-type-desc">Soumettre une nouvelle proposition</p>
-            <button class="btn-ajouter">Ajouter</button>
+            <button type="button" class="btn-ajouter">Ajouter</button>
           </div>
           <div class="demande-type-card" (click)="selectTypeDemande('REQUETE')">
             <div class="demande-type-icon">📝</div>
             <h5 class="demande-type-title">Requête</h5>
             <p class="demande-type-desc">Soumettre une nouvelle requête</p>
-            <button class="btn-ajouter">Ajouter</button>
+            <button type="button" class="btn-ajouter">Ajouter</button>
           </div>
           <div class="demande-type-card" (click)="selectTypeDemande('RECLAMATION')">
             <div class="demande-type-icon">📢</div>
             <h5 class="demande-type-title">Réclamation</h5>
             <p class="demande-type-desc">Soumettre une nouvelle réclamation</p>
-            <button class="btn-ajouter">Ajouter</button>
+            <button type="button" class="btn-ajouter">Ajouter</button>
           </div>
         </div>
 
-        <!-- Formulaire -->
         <div *ngIf="demandeTypeSelectionne" class="form-card demande-detail-card">
           <div class="form-card-header">
             <button type="button" class="btn-back" (click)="annulerDemandeForm()">← Retour</button>
@@ -217,11 +207,32 @@
           </div>
 
           <div class="demande-form-body">
+
+            <!-- Métier -->
+            <div class="field-group">
+              <label>Métier <span class="req">*</span></label>
+              <select class="field-input" [(ngModel)]="selectedIdMetier" (change)="onMetierChange()">
+                <option [ngValue]="null" disabled>-- Choisir un métier --</option>
+                <option *ngFor="let m of metiers" [ngValue]="m.idMetier">{{ m.libelleMetier }}</option>
+              </select>
+            </div>
+
+            <!-- Département filtré -->
+            <div class="field-group">
+              <label>Département <span class="req">*</span></label>
+              <select class="field-input" [(ngModel)]="nouvelleDemande.departement"
+                      [disabled]="departementsFiltre.length === 0">
+                <option [ngValue]="null" disabled>-- Choisir un département --</option>
+                <option *ngFor="let d of departementsFiltre" [ngValue]="{ idDepartement: d.idDepartement }">
+                  {{ d.nomDepartement }}
+                </option>
+              </select>
+              <small class="text-muted" *ngIf="!selectedIdMetier">Veuillez d'abord choisir un métier</small>
+            </div>
+
             <div class="field-group">
               <label>Description <span class="req">*</span></label>
-              <textarea
-                class="field-input field-textarea"
-                rows="5"
+              <textarea class="field-input field-textarea" rows="5"
                 [placeholder]="demandeTypeSelectionne === 'REQUETE' ? 'Décrivez votre requête...' :
                   demandeTypeSelectionne === 'RECLAMATION' ? 'Décrivez votre réclamation...' :
                   'Décrivez votre proposition...'"
@@ -271,66 +282,354 @@
               </select>
             </div>
 
+            <!-- Pièce jointe -->
+            <div class="field-group">
+              <label>📎 Pièce jointe <span style="color:#888; font-size:12px;">(facultatif)</span></label>
+              <div class="file-upload-zone"
+                   (click)="$event.stopPropagation(); fileInput.click()"
+                   [class.has-file]="pieceJointe">
+                <input #fileInput type="file"
+                       accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                       style="display:none"
+                       (change)="onFichierChange($event)"/>
+                <div *ngIf="!pieceJointe" class="file-upload-placeholder">
+                  <span style="font-size:28px;">📁</span>
+                  <span>Cliquez pour choisir un fichier</span>
+                  <small>Image, PDF, Word, Excel acceptés</small>
+                </div>
+                <div *ngIf="pieceJointe" class="file-upload-selected">
+                  <span style="font-size:24px;">{{ getFileIcon() }}</span>
+                  <span>{{ pieceJointe.name }}</span>
+                  <button type="button" class="file-remove-btn"
+                          (click)="$event.stopPropagation(); pieceJointe = null">✕</button>
+                </div>
+              </div>
+            </div>
+
             <div class="demande-alert demande-alert-error" *ngIf="demandeError">{{ demandeError }}</div>
-<div class="demande-alert demande-alert-success" *ngIf="demandeSuccess" style="white-space: pre-line; line-height: 1.8;">
-  {{ demandeSuccess }}
-</div>
+            <div class="demande-alert demande-alert-success" *ngIf="demandeSuccess"
+                 style="white-space: pre-line; line-height: 1.8;">{{ demandeSuccess }}</div>
           </div>
 
           <div class="demande-actions-bar">
-            <button
-              type="button"
-              class="btn-demande-submit"
-              (click)="soumettredemande()"
-              [disabled]="demandeSubmitting">
+            <button type="button" class="btn-demande-submit" (click)="soumettredemande()"
+                    [disabled]="demandeSubmitting || !nouvelleDemande.departement">
               {{ demandeSubmitting ? 'Envoi…' :
                 (demandeTypeSelectionne === 'REQUETE' ? 'Soumettre la requête' :
                  demandeTypeSelectionne === 'RECLAMATION' ? 'Soumettre la réclamation' :
                  'Soumettre la proposition') }}
             </button>
-            <button type="button" class="btn-demande-cancel" (click)="annulerDemandeForm()" [disabled]="demandeSubmitting">
-              Annuler
-            </button>
+            <button type="button" class="btn-demande-cancel" (click)="annulerDemandeForm()"
+                    [disabled]="demandeSubmitting">Annuler</button>
           </div>
         </div>
       </div>
 
       <!-- HISTORIQUE -->
       <div *ngIf="activeSection === 'historique' && showEmployeMenus">
-        <div class="page-header">
-          <h4 class="page-title">Historique</h4>
-          <p class="page-subtitle">Consultez l'historique des actions</p>
-        </div>
-        <div class="empty-section">
-          <div class="empty-icon-text">🕐</div>
-          <p>Aucun historique disponible</p>
-        </div>
+        <app-historique></app-historique>
       </div>
 
-      <!-- GESTION DES DEMANDES (permission TRAITER_DEMANDE / rôle admin) -->
+      <!-- GESTION DES DEMANDES -->
       <div *ngIf="activeSection === 'gestion-demandes' && canTraiterDemandes">
         <div class="page-header">
           <h4 class="page-title">Gestion des demandes</h4>
           <p class="page-subtitle">Consultez et traitez les demandes en cours</p>
         </div>
         <div class="home-cards home-cards-activity">
-          <a class="home-card gestion-demande-link" routerLink="/propositions/liste">
+          <div class="home-card gestion-demande-link" (click)="ouvrirListePropositions()">
             <div class="home-card-icon"><img src="assets/demandes.svg" alt=""/></div>
             <div class="home-card-label">Propositions en cours</div>
             <div class="home-card-count">Ouvrir la liste →</div>
-          </a>
-          <a class="home-card gestion-demande-link" routerLink="/requetes/liste">
+          </div>
+          <div class="home-card gestion-demande-link" (click)="ouvrirListeRequetes()">
             <div class="home-card-icon"><img src="assets/demandes.svg" alt=""/></div>
             <div class="home-card-label">Requêtes en cours</div>
             <div class="home-card-count">Ouvrir la liste →</div>
-          </a>
-          <a class="home-card gestion-demande-link" routerLink="/reclamations/liste">
+          </div>
+          <div class="home-card gestion-demande-link" (click)="ouvrirListeReclamations()">
             <div class="home-card-icon"><img src="assets/demandes.svg" alt=""/></div>
             <div class="home-card-label">Réclamations en cours</div>
             <div class="home-card-count">Ouvrir la liste →</div>
-          </a>
+          </div>
         </div>
       </div>
+
+    <!-- LISTE PROPOSITIONS -->
+<div *ngIf="activeSection === 'liste-propositions'">
+  <div class="page-header" style="display:flex; align-items:center; gap:16px;">
+    <button class="btn-back" (click)="activeSection = 'gestion-demandes'">← Retour</button>
+    <div>
+      <h4 class="page-title">📋 Propositions en cours</h4>
+      <p class="page-subtitle">Consultez et gérez les propositions de votre département</p>
+    </div>
+  </div>
+  <div style="margin-bottom:16px;">
+    <input class="field-input" style="max-width:320px;" placeholder="🔍 Rechercher par ID..."
+           [(ngModel)]="rechercheDemande"/>
+  </div>
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr><th>ID</th><th>Utilisateur</th><th>Type util.</th><th>Description</th><th>Type</th><th>Date</th><th>Statut</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of demandesFiltrees(propositions)">
+          <td>{{ p.idDemande }}</td>
+          <td>{{ getNomUtilisateur(p) }}</td>
+          <td><span class="badge badge-blue">{{ getTypeUtilisateur(p) }}</span></td>
+          <td>{{ p.description }}</td>
+          <td>{{ p.typeProposition }}</td>
+          <td>{{ p.dateDemande }}</td>
+          <td><span class="badge badge-yellow">{{ p.statut || 'EN_ATTENTE' }}</span></td>
+          <td class="actions-cell">
+            <button class="btn-table btn-info" (click)="selectedProposition = p">Info</button>
+            <button class="btn-table btn-warn" (click)="ouvrirModalTraitement(p, 'PROPOSITION')">Traiter</button>
+          </td>
+        </tr>
+        <tr *ngIf="demandesFiltrees(propositions).length === 0">
+          <td colspan="8" class="empty-row">Aucune proposition</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Info -->
+  <div class="modal-overlay" *ngIf="selectedProposition" (click)="selectedProposition = null">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Détails de la proposition</h3>
+      <div class="modal-body-content">
+        <p><strong>ID :</strong> {{ selectedProposition.idDemande }}</p>
+        <p><strong>Utilisateur :</strong> {{ getNomUtilisateur(selectedProposition) }}</p>
+        <p><strong>Type utilisateur :</strong> {{ getTypeUtilisateur(selectedProposition) }}</p>
+        <p><strong>Description :</strong> {{ selectedProposition.description }}</p>
+        <p><strong>Type :</strong> {{ selectedProposition.typeProposition }}</p>
+        <p><strong>Date :</strong> {{ selectedProposition.dateDemande }}</p>
+        <p><strong>Statut :</strong> {{ selectedProposition.statut || 'EN_ATTENTE' }}</p>
+      </div>
+      <div class="modal-footer-btns">
+        <button class="btn-table btn-gray" (click)="selectedProposition = null">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Traitement -->
+  <div class="modal-overlay" *ngIf="demandeEnCours" (click)="demandeEnCours = null">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Traiter la proposition #{{ demandeEnCours.idDemande }}</h3>
+      <div class="modal-body-content">
+        <div class="field-group">
+          <label>Nouveau statut <span class="req">*</span></label>
+          <select class="field-input" [(ngModel)]="nouveauStatut">
+            <option value="">-- Choisir --</option>
+            <option value="EN_COURS">En cours</option>
+            <option value="TRAITEE">Traitée</option>
+            <option value="CLOTUREE">Clôturée</option>
+            <option value="ANNULEE">Annulée</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Réponse <span class="req">*</span></label>
+          <textarea class="field-input field-textarea" rows="4"
+                    placeholder="Rédigez votre réponse..."
+                    [(ngModel)]="reponseTexte"></textarea>
+        </div>
+        <div *ngIf="reponseErreur" class="demande-alert demande-alert-error">{{ reponseErreur }}</div>
+        <div *ngIf="reponseEnvoyee" class="demande-alert demande-alert-success">✅ Réponse envoyée !</div>
+      </div>
+      <div class="modal-footer-btns">
+        <button class="btn-table btn-gray" (click)="demandeEnCours = null">Annuler</button>
+        <button class="btn-action" (click)="envoyerReponse()" [disabled]="reponseEnvoyee">Envoyer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+     <!-- LISTE REQUETES -->
+<div *ngIf="activeSection === 'liste-requetes'">
+  <div class="page-header" style="display:flex; align-items:center; gap:16px;">
+    <button class="btn-back" (click)="activeSection = 'gestion-demandes'">← Retour</button>
+    <div>
+      <h4 class="page-title">📝 Requêtes en cours</h4>
+      <p class="page-subtitle">Consultez et gérez les requêtes de votre département</p>
+    </div>
+  </div>
+  <div style="margin-bottom:16px;">
+    <input class="field-input" style="max-width:320px;" placeholder="🔍 Rechercher par ID..."
+           [(ngModel)]="rechercheDemande"/>
+  </div>
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr><th>ID</th><th>Utilisateur</th><th>Type util.</th><th>Description</th><th>Type</th><th>Date</th><th>Statut</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of demandesFiltrees(requetes)">
+          <td>{{ r.idDemande }}</td>
+          <td>{{ getNomUtilisateur(r) }}</td>
+          <td><span class="badge badge-blue">{{ getTypeUtilisateur(r) }}</span></td>
+          <td>{{ r.description }}</td>
+          <td>{{ r.typeRequete }}</td>
+          <td>{{ r.dateDemande }}</td>
+          <td><span class="badge badge-yellow">{{ r.statut || 'EN_ATTENTE' }}</span></td>
+          <td class="actions-cell">
+            <button class="btn-table btn-info" (click)="selectedRequete = r">Info</button>
+            <button class="btn-table btn-warn" (click)="ouvrirModalTraitement(r, 'REQUETE')">Traiter</button>
+          </td>
+        </tr>
+        <tr *ngIf="demandesFiltrees(requetes).length === 0">
+          <td colspan="8" class="empty-row">Aucune requête</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Info -->
+  <div class="modal-overlay" *ngIf="selectedRequete" (click)="selectedRequete = null">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Détails de la requête</h3>
+      <div class="modal-body-content">
+        <p><strong>ID :</strong> {{ selectedRequete.idDemande }}</p>
+        <p><strong>Utilisateur :</strong> {{ getNomUtilisateur(selectedRequete) }}</p>
+        <p><strong>Type utilisateur :</strong> {{ getTypeUtilisateur(selectedRequete) }}</p>
+        <p><strong>Description :</strong> {{ selectedRequete.description }}</p>
+        <p><strong>Type :</strong> {{ selectedRequete.typeRequete }}</p>
+        <p><strong>Date :</strong> {{ selectedRequete.dateDemande }}</p>
+        <p><strong>Statut :</strong> {{ selectedRequete.statut || 'EN_ATTENTE' }}</p>
+      </div>
+      <div class="modal-footer-btns">
+        <button class="btn-table btn-gray" (click)="selectedRequete = null">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Traitement -->
+  <div class="modal-overlay" *ngIf="demandeEnCours" (click)="demandeEnCours = null">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Traiter la requête #{{ demandeEnCours.idDemande }}</h3>
+      <div class="modal-body-content">
+        <div class="field-group">
+          <label>Nouveau statut <span class="req">*</span></label>
+          <select class="field-input" [(ngModel)]="nouveauStatut">
+            <option value="">-- Choisir --</option>
+            <option value="EN_COURS">En cours</option>
+            <option value="TRAITEE">Traitée</option>
+            <option value="CLOTUREE">Clôturée</option>
+            <option value="ANNULEE">Annulée</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Réponse <span class="req">*</span></label>
+          <textarea class="field-input field-textarea" rows="4"
+                    placeholder="Rédigez votre réponse..."
+                    [(ngModel)]="reponseTexte"></textarea>
+        </div>
+        <div *ngIf="reponseErreur" class="demande-alert demande-alert-error">{{ reponseErreur }}</div>
+        <div *ngIf="reponseEnvoyee" class="demande-alert demande-alert-success">✅ Réponse envoyée !</div>
+      </div>
+      <div class="modal-footer-btns">
+        <button class="btn-table btn-gray" (click)="demandeEnCours = null">Annuler</button>
+        <button class="btn-action" (click)="envoyerReponse()" [disabled]="reponseEnvoyee">Envoyer</button>
+      </div>
+    </div>
+  </div>
+</div>
+     <!-- LISTE RECLAMATIONS -->
+<div *ngIf="activeSection === 'liste-reclamations'">
+  <div class="page-header" style="display:flex; align-items:center; gap:16px;">
+    <button class="btn-back" (click)="activeSection = 'gestion-demandes'">← Retour</button>
+    <div>
+      <h4 class="page-title">📢 Réclamations en cours</h4>
+      <p class="page-subtitle">Consultez et gérez les réclamations de votre département</p>
+    </div>
+  </div>
+  <div style="margin-bottom:16px;">
+    <input class="field-input" style="max-width:320px;" placeholder="🔍 Rechercher par ID..."
+           [(ngModel)]="rechercheDemande"/>
+  </div>
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr><th>ID</th><th>Utilisateur</th><th>Type util.</th><th>Description</th><th>Type</th><th>Urgence</th><th>Date</th><th>Statut</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of demandesFiltrees(reclamations)">
+          <td>{{ r.idDemande }}</td>
+          <td>{{ getNomUtilisateur(r) }}</td>
+          <td><span class="badge badge-blue">{{ getTypeUtilisateur(r) }}</span></td>
+          <td>{{ r.description }}</td>
+          <td>{{ r.typeReclamation }}</td>
+          <td>
+            <span class="badge"
+              [ngClass]="{'badge-red': r.niveauUrgence==='URGENT','badge-yellow': r.niveauUrgence==='MOYEN','badge-green': r.niveauUrgence==='FAIBLE'}">
+              {{ r.niveauUrgence }}
+            </span>
+          </td>
+          <td>{{ r.dateDemande }}</td>
+          <td><span class="badge badge-yellow">{{ r.statut || 'EN_ATTENTE' }}</span></td>
+          <td class="actions-cell">
+            <button class="btn-table btn-info" (click)="selectedReclamation = r">Info</button>
+            <button class="btn-table btn-warn" (click)="ouvrirModalTraitement(r, 'RECLAMATION')">Traiter</button>
+          </td>
+        </tr>
+        <tr *ngIf="demandesFiltrees(reclamations).length === 0">
+          <td colspan="9" class="empty-row">Aucune réclamation</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Info -->
+  <div class="modal-overlay" *ngIf="selectedReclamation" (click)="selectedReclamation = null">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Détails de la réclamation</h3>
+      <div class="modal-body-content">
+        <p><strong>ID :</strong> {{ selectedReclamation.idDemande }}</p>
+        <p><strong>Utilisateur :</strong> {{ getNomUtilisateur(selectedReclamation) }}</p>
+        <p><strong>Type utilisateur :</strong> {{ getTypeUtilisateur(selectedReclamation) }}</p>
+        <p><strong>Description :</strong> {{ selectedReclamation.description }}</p>
+        <p><strong>Type :</strong> {{ selectedReclamation.typeReclamation }}</p>
+        <p><strong>Urgence :</strong> {{ selectedReclamation.niveauUrgence }}</p>
+        <p><strong>Date :</strong> {{ selectedReclamation.dateDemande }}</p>
+        <p><strong>Statut :</strong> {{ selectedReclamation.statut || 'EN_ATTENTE' }}</p>
+      </div>
+      <div class="modal-footer-btns">
+        <button class="btn-table btn-gray" (click)="selectedReclamation = null">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Traitement -->
+  <div class="modal-overlay" *ngIf="demandeEnCours" (click)="demandeEnCours = null">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Traiter la réclamation #{{ demandeEnCours.idDemande }}</h3>
+      <div class="modal-body-content">
+        <div class="field-group">
+          <label>Nouveau statut <span class="req">*</span></label>
+          <select class="field-input" [(ngModel)]="nouveauStatut">
+            <option value="">-- Choisir --</option>
+            <option value="EN_COURS">En cours</option>
+            <option value="TRAITEE">Traitée</option>
+            <option value="CLOTUREE">Clôturée</option>
+            <option value="ANNULEE">Annulée</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Réponse <span class="req">*</span></label>
+          <textarea class="field-input field-textarea" rows="4"
+                    placeholder="Rédigez votre réponse..."
+                    [(ngModel)]="reponseTexte"></textarea>
+        </div>
+        <div *ngIf="reponseErreur" class="demande-alert demande-alert-error">{{ reponseErreur }}</div>
+        <div *ngIf="reponseEnvoyee" class="demande-alert demande-alert-success">✅ Réponse envoyée !</div>
+      </div>
+      <div class="modal-footer-btns">
+        <button class="btn-table btn-gray" (click)="demandeEnCours = null">Annuler</button>
+        <button class="btn-action" (click)="envoyerReponse()" [disabled]="reponseEnvoyee">Envoyer</button>
+      </div>
+    </div>
+  </div>
+</div>
 
       <!-- MON PROFIL -->
       <div *ngIf="activeSection === 'profil'">
@@ -350,30 +649,12 @@
           </div>
           <div class="profil-divider"></div>
           <div class="profil-infos">
-            <div class="profil-info-row">
-              <span class="profil-info-label">👤 Prénom</span>
-              <span class="profil-info-value">{{ prenomUtilisateur || '—' }}</span>
-            </div>
-            <div class="profil-info-row">
-              <span class="profil-info-label">👤 Nom</span>
-              <span class="profil-info-value">{{ nomFamilleUtilisateur || '—' }}</span>
-            </div>
-            <div class="profil-info-row">
-              <span class="profil-info-label">📧 Email</span>
-              <span class="profil-info-value">{{ emailUtilisateur }}</span>
-            </div>
-            <div class="profil-info-row">
-              <span class="profil-info-label">📱 Téléphone</span>
-              <span class="profil-info-value">{{ telUtilisateur || '—' }}</span>
-            </div>
-            <div class="profil-info-row">
-              <span class="profil-info-label">🔑 Rôle</span>
-              <span class="profil-info-value">{{ roleUtilisateur }}</span>
-            </div>
-            <div class="profil-info-row">
-              <span class="profil-info-label">✅ Statut</span>
-              <span class="badge badge-green">Actif</span>
-            </div>
+            <div class="profil-info-row"><span class="profil-info-label">👤 Prénom</span><span class="profil-info-value">{{ prenomUtilisateur || '—' }}</span></div>
+            <div class="profil-info-row"><span class="profil-info-label">👤 Nom</span><span class="profil-info-value">{{ nomFamilleUtilisateur || '—' }}</span></div>
+            <div class="profil-info-row"><span class="profil-info-label">📧 Email</span><span class="profil-info-value">{{ emailUtilisateur }}</span></div>
+            <div class="profil-info-row"><span class="profil-info-label">📱 Téléphone</span><span class="profil-info-value">{{ telUtilisateur || '—' }}</span></div>
+            <div class="profil-info-row"><span class="profil-info-label">🔑 Rôle</span><span class="profil-info-value">{{ roleUtilisateur }}</span></div>
+            <div class="profil-info-row"><span class="profil-info-label">✅ Statut</span><span class="badge badge-green">Actif</span></div>
           </div>
         </div>
       </div>
@@ -384,75 +665,40 @@
           <h4 class="page-title">Paramètres</h4>
           <p class="page-subtitle">Configurez votre compte</p>
         </div>
-
-        <!-- Mot de passe -->
         <div class="param-section-card">
           <h6 class="param-section-title">🔐 Modifier le mot de passe</h6>
           <div class="param-form">
-            <div class="field-group">
-              <label>Ancien mot de passe</label>
-              <input type="password" class="field-input" placeholder="••••••••"
-                     [(ngModel)]="mdp.ancien"/>
-            </div>
+            <div class="field-group"><label>Ancien mot de passe</label><input type="password" class="field-input" placeholder="••••••••" [(ngModel)]="mdp.ancien"/></div>
             <div class="row-2">
-              <div class="field-group">
-                <label>Nouveau mot de passe</label>
-                <input type="password" class="field-input" placeholder="••••••••"
-                       [(ngModel)]="mdp.nouveau"/>
-              </div>
-              <div class="field-group">
-                <label>Confirmer</label>
-                <input type="password" class="field-input" placeholder="••••••••"
-                       [(ngModel)]="mdp.confirmer"/>
-              </div>
+              <div class="field-group"><label>Nouveau mot de passe</label><input type="password" class="field-input" placeholder="••••••••" [(ngModel)]="mdp.nouveau"/></div>
+              <div class="field-group"><label>Confirmer</label><input type="password" class="field-input" placeholder="••••••••" [(ngModel)]="mdp.confirmer"/></div>
             </div>
-            <button class="btn-action" (click)="changerMotDePasse()">
-              Enregistrer le mot de passe
-            </button>
+            <button class="btn-action" (click)="changerMotDePasse()">Enregistrer le mot de passe</button>
           </div>
         </div>
-
-        <!-- Langue -->
         <div class="param-section-card">
           <h6 class="param-section-title">🌐 Langue de l'interface</h6>
           <div class="param-form">
-            <div class="field-group">
-              <label>Choisir la langue</label>
+            <div class="field-group"><label>Choisir la langue</label>
               <select class="field-input" [(ngModel)]="langueSelectionnee">
                 <option value="fr">🇫🇷 Français</option>
                 <option value="ar">🇩🇿 Arabe</option>
                 <option value="en">🇬🇧 Anglais</option>
               </select>
             </div>
-            <button class="btn-action" (click)="changerLangue()">
-              Appliquer la langue
-            </button>
+            <button class="btn-action" (click)="changerLangue()">Appliquer la langue</button>
           </div>
         </div>
-
-        <!-- Notifications -->
         <div class="param-section-card">
           <h6 class="param-section-title">🔔 Notifications</h6>
           <div class="param-toggles">
             <div class="param-toggle-row">
-              <div>
-                <div class="param-toggle-label">Notifications par email</div>
-                <div class="param-toggle-desc">Recevoir les alertes par email</div>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" [(ngModel)]="notifEmail"/>
-                <span class="toggle-slider"></span>
-              </label>
+              <div><div class="param-toggle-label">Notifications par email</div><div class="param-toggle-desc">Recevoir les alertes par email</div></div>
+              <label class="toggle-switch"><input type="checkbox" [(ngModel)]="notifEmail"/><span class="toggle-slider"></span></label>
             </div>
             <div class="param-toggle-row">
-              <div>
-                <div class="param-toggle-label">Notifications dans l'application</div>
-                <div class="param-toggle-desc">Afficher les alertes dans le dashboard</div>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" [(ngModel)]="notifApp"/>
-                <span class="toggle-slider"></span>
-              </label>
+              <div><div class="param-toggle-label">Notifications dans l'application</div><div class="param-toggle-desc">Afficher les alertes dans le dashboard</div></div>
+              <label class="toggle-switch"><input type="checkbox" [(ngModel)]="notifApp"/><span class="toggle-slider"></span></label>
             </div>
           </div>
         </div>
@@ -467,15 +713,13 @@
         <div class="form-card">
           <h6 class="form-card-title">Affecter un rôle</h6>
           <div class="form-row">
-            <div class="field-group">
-              <label>Utilisateur</label>
+            <div class="field-group"><label>Utilisateur</label>
               <select class="field-input" [(ngModel)]="affectation.idUtil">
                 <option [value]="0">-- Choisir --</option>
                 <option *ngFor="let u of utilisateurs" [value]="u.idUtil">{{ u.prenomUtil }} {{ u.nomUtil }}</option>
               </select>
             </div>
-            <div class="field-group">
-              <label>Rôle</label>
+            <div class="field-group"><label>Rôle</label>
               <select class="field-input" [(ngModel)]="affectation.idRole">
                 <option [value]="0">-- Choisir --</option>
                 <option *ngFor="let r of roles" [value]="r.idRole">{{ r.nomRole }}</option>

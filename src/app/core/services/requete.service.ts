@@ -1,53 +1,56 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class RequeteService {
 
-  private baseUrl = 'http://localhost:8082/Api/requetes';
+  private baseUrl = 'http://localhost:8082';
 
   constructor(private http: HttpClient) {}
 
-  private getAuthHeaders() {
+  private getHeaders(): HttpHeaders {
     const token = localStorage.getItem('token');
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
-  getAll() {
-    return this.http.get<any[]>(this.baseUrl, { headers: this.getAuthHeaders() });
+  getAll(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/Api/requetes`, { headers: this.getHeaders() });
   }
 
-  getById(id: number) {
-    return this.http.get<any>(`${this.baseUrl}/${id}`, { headers: this.getAuthHeaders() });
+  getMesDemandes(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/Api/requetes/mes-demandes`, { headers: this.getHeaders() });
   }
 
-  save(requete: any, fichier?: File) {
-    const token = localStorage.getItem('token');
-    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+  getById(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/Api/requetes/${id}`, { headers: this.getHeaders() });
+  }
 
+  save(data: any, fichier?: File): Observable<any> {
+  const formData = new FormData();
+  formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+  if (fichier) formData.append('fichier', fichier);
+  return this.http.post(`${this.baseUrl}/Api/requetes`, formData, {
+    headers: new HttpHeaders({ Authorization: `Bearer ${localStorage.getItem('token')}` })
+  });
+}
+
+  update(id: number, data: any, fichier?: File): Observable<any> {
     const formData = new FormData();
-    formData.append('data', new Blob([JSON.stringify(requete)], { type: 'application/json' }));
-    if (fichier) {
-      formData.append('fichier', fichier);
-    }
-
-    return this.http.post<any>(this.baseUrl, formData, { headers });
+    formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+    if (fichier) formData.append('fichier', fichier);
+    return this.http.put(`${this.baseUrl}/Api/requetes/${id}`, formData, { headers: new HttpHeaders({ Authorization: `Bearer ${localStorage.getItem('token')}` }) });
   }
 
-  update(id: number, requete: any) {
-    return this.http.put<any>(`${this.baseUrl}/${id}`, requete, { headers: this.getAuthHeaders() });
+  delete(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/Api/requetes/${id}`, { headers: this.getHeaders() });
   }
 
-  delete(id: number) {
-    return this.http.delete(`${this.baseUrl}/${id}`, { headers: this.getAuthHeaders() });
+  getEtat(id: number): Observable<string> {
+    return this.http.get(`${this.baseUrl}/Api/requetes/${id}/etat`, { headers: this.getHeaders(), responseType: 'text' });
   }
-  getEtat(id: number) {
-    return this.http.get<string>(`${this.baseUrl}/${id}/etat`, 
-        { headers: this.getAuthHeaders(), responseType: 'text' as 'json' });
-}
 
-confirmerSoumission(id: number) {
-    return this.http.put(`${this.baseUrl}/${id}/statut/2`, {}, 
-        { headers: this.getAuthHeaders() });
-}
+  confirmerSoumission(id: number): Observable<any> {
+    return this.http.put(`${this.baseUrl}/Api/requetes/${id}/statut/2`, {}, { headers: this.getHeaders() });
+  }
 }

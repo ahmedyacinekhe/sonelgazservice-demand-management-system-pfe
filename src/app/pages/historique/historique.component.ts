@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { RequeteService } from '../../core/services/requete.service';
 import { ReclamationService } from '../../core/services/reclamation.service';
 import { PropositionService } from '../../core/services/proposition.service';
@@ -25,7 +26,14 @@ export class HistoriqueComponent implements OnInit {
   messageSoumission: string = '';
   messageType: 'success' | 'info' | 'error' = 'info';
 
+  // Réponse du responsable
+  reponseDemande: any = null;
+  reponseLoading = false;
+
+  private baseUrl = 'http://localhost:8082';
+
   constructor(
+    private http: HttpClient,
     private requeteService: RequeteService,
     private reclamationService: ReclamationService,
     private propositionService: PropositionService
@@ -35,14 +43,19 @@ export class HistoriqueComponent implements OnInit {
     this.chargerHistorique();
   }
 
+  private getHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    return new HttpHeaders({ Authorization: `Bearer ${token}` });
+  }
+
   chargerHistorique() {
     this.loading = true;
     this.erreur = '';
 
     forkJoin({
-      requetes: this.requeteService.getAll(),
-      reclamations: this.reclamationService.getAll(),
-      propositions: this.propositionService.getAll()
+      requetes:     this.requeteService.getMesDemandes(),
+      reclamations: this.reclamationService.getMesDemandes(),
+      propositions: this.propositionService.getMesDemandes()
     }).subscribe({
       next: ({ requetes, reclamations, propositions }) => {
         const r  = (requetes     || []).map((d: any) => ({ ...d, typeDemande: 'REQUETE' }));
@@ -55,7 +68,6 @@ export class HistoriqueComponent implements OnInit {
           return db - da;
         });
 
-        // Charger l'état de chaque demande
         this.chargerEtats();
         this.loading = false;
       },
@@ -83,10 +95,39 @@ export class HistoriqueComponent implements OnInit {
     });
   }
 
+  // ===== RÉPONSE DU RESPONSABLE =====
+
+  chargerReponse(demande: any) {
+    const id = demande.idDemande;
+    if (!id) return;
+
+    this.reponseLoading = true;
+    this.reponseDemande = null;
+
+    this.http.get<any[]>(`${this.baseUrl}/Api/reponses/demande/${id}`, { headers: this.getHeaders() })
+      .subscribe({
+        next: (reponses) => {
+          // On prend la dernière réponse si plusieurs existent
+          this.reponseDemande = reponses && reponses.length > 0
+            ? reponses[reponses.length - 1]
+            : null;
+          this.reponseLoading = false;
+        },
+        error: () => {
+          this.reponseDemande = null;
+          this.reponseLoading = false;
+        }
+      });
+  }
+
+  // ===== FILTRAGE =====
+
   demandesFiltrees(): any[] {
     if (this.activeTab === 'tous') return this.toutesLesDemandes;
     return this.toutesLesDemandes.filter(d => d.typeDemande === this.activeTab);
   }
+
+  // ===== STATUT =====
 
   getStatutClass(statut: string): string {
     switch ((statut || '').toUpperCase()) {
@@ -122,6 +163,8 @@ export class HistoriqueComponent implements OnInit {
     }
   }
 
+  // ===== TYPE =====
+
   getTypeIcon(type: string): string {
     switch (type) {
       case 'REQUETE':     return '📝';
@@ -140,6 +183,8 @@ export class HistoriqueComponent implements OnInit {
     }
   }
 
+  // ===== HELPERS =====
+
   getDemandeId(d: any): number {
     return d.idDemande || d.id || 0;
   }
@@ -148,23 +193,33 @@ export class HistoriqueComponent implements OnInit {
     return (demande.statut || '').toUpperCase() === 'BROUILLON';
   }
 
+  countType(type: string): number {
+    return this.toutesLesDemandes.filter(d => d.typeDemande === type).length;
+  }
+
+  // ===== MODAL DÉTAIL =====
+
   voirDetail(demande: any) {
     this.selectedDemande = demande;
     this.messageSoumission = '';
+    this.reponseDemande = null;
+    this.chargerReponse(demande);
   }
 
   fermerDetail() {
     this.selectedDemande = null;
     this.messageSoumission = '';
+    this.reponseDemande = null;
+    this.reponseLoading = false;
   }
 
-  // ✅ Soumettre en brouillon (déjà fait automatiquement, juste afficher message)
+  // ===== SOUMISSION =====
+
   soumettreBrouillon(demande: any) {
     this.messageSoumission = '✅ Votre demande est soumise en tant que brouillon. Vous pouvez la modifier quand vous voulez.';
     this.messageType = 'success';
   }
 
-  // ✅ Confirmer la soumission → passer à EN_ATTENTE (id_etat = 2)
   confirmerSoumission(demande: any) {
     const id = this.getDemandeId(demande);
     if (!id) return;
@@ -186,6 +241,8 @@ export class HistoriqueComponent implements OnInit {
       }
     });
   }
+
+  // ===== SUPPRESSION =====
 
   supprimer(demande: any) {
     const id = this.getDemandeId(demande);
@@ -209,9 +266,5 @@ export class HistoriqueComponent implements OnInit {
         alert('Erreur lors de la suppression.');
       }
     });
-  }
-
-  countType(type: string): number {
-    return this.toutesLesDemandes.filter(d => d.typeDemande === type).length;
   }
 }
