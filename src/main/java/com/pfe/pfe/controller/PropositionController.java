@@ -39,6 +39,12 @@ public class PropositionController {
         return propositionService.findAll();
     }
 
+    // ✅ NOUVEAU : seulement les demandes de l'utilisateur connecté
+    @GetMapping("/mes-demandes")
+    public List<Proposition> getMesDemandes(@AuthenticationPrincipal UserDetails userDetails) {
+        return propositionService.findByUtilisateur(userDetails.getUsername());
+    }
+
     @GetMapping("/{id}")
     public Proposition findById(@PathVariable int id) {
         return propositionService.findById(id);
@@ -66,11 +72,10 @@ public class PropositionController {
 
         Proposition saved = propositionService.save(proposition);
 
-        // ✅ Statut BROUILLON automatique (id_etat = 1)
         DemandeEtatDetail etatDetail = new DemandeEtatDetail();
         DemandeEtatDetailId etatId = new DemandeEtatDetailId();
         etatId.setIdDemande(saved.getIdDemande());
-        etatId.setIdEtat(1); // BROUILLON
+        etatId.setIdEtat(1);
         etatDetail.setDemandeEtatDetailId(etatId);
         etatDetail.setDateEtat(new java.sql.Date(System.currentTimeMillis()));
         demandeEtatDetailService.save(etatDetail);
@@ -78,7 +83,6 @@ public class PropositionController {
         return saved;
     }
 
-    // ✅ Modifier une demande BROUILLON (avec fichier)
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Proposition updateWithFile(
             @PathVariable int id,
@@ -95,13 +99,11 @@ public class PropositionController {
         return propositionService.save(proposition);
     }
 
-    // ✅ Modifier sans fichier (JSON simple)
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Proposition update(@PathVariable int id, @RequestBody Proposition proposition) {
         return propositionService.save(proposition);
     }
 
-    // ✅ Changer le statut : BROUILLON → EN_ATTENTE
     @PutMapping("/{id}/statut/{idEtat}")
     public void changerStatut(@PathVariable int id, @PathVariable int idEtat) {
         demandeEtatDetailRepository.deleteByIdDemande(id);
@@ -116,15 +118,20 @@ public class PropositionController {
     }
 
     @DeleteMapping("/{id}")
-@Transactional
-public void deleteById(@PathVariable int id) {
-    demandeEtatDetailRepository.deleteByIdDemande(id);
-    propositionService.deleteById(id);
-}
-@GetMapping("/{id}/etat")
-public String getEtat(@PathVariable int id) {
-    List<DemandeEtatDetail> etats = demandeEtatDetailRepository.findByIdDemande(id);
-    if (etats.isEmpty()) return "INCONNU";
-    return etats.get(0).getEtatDemande().getLibelleEtat();
+    @Transactional
+    public void deleteById(@PathVariable int id) {
+        demandeEtatDetailRepository.deleteByIdDemande(id);
+        propositionService.deleteById(id);
+    }
+
+    @GetMapping("/{id}/etat")
+    public String getEtat(@PathVariable int id) {
+        List<DemandeEtatDetail> etats = demandeEtatDetailRepository.findByIdDemande(id);
+        if (etats.isEmpty()) return "INCONNU";
+        return etats.get(0).getEtatDemande().getLibelleEtat();
+    }
+    @GetMapping("/departement/{idDepartement}")
+public List<Proposition> getByDepartement(@PathVariable int idDepartement) {
+    return propositionService.findByDepartement(idDepartement);
 }
 }

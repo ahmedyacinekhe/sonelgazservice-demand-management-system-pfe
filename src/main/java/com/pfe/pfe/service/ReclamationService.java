@@ -1,10 +1,8 @@
 package com.pfe.pfe.service;
 
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import com.pfe.pfe.entity.Reclamation;
 import com.pfe.pfe.repository.ReclamationRepository;
 
@@ -12,24 +10,28 @@ import com.pfe.pfe.repository.ReclamationRepository;
 public class ReclamationService {
 
     @Autowired
-    private ReclamationRepository reclamationRepository ;
+    private ReclamationRepository reclamationRepository;
 
-    public List<Reclamation> findAll(){
+    public List<Reclamation> findAll() {
         return reclamationRepository.findAll();
     }
 
-    public Reclamation findById(int id){
+    public Reclamation findById(int id) {
         return reclamationRepository.findById(id).orElse(null);
     }
 
-    public Reclamation save(Reclamation reclamation){
+    public Reclamation save(Reclamation reclamation) {
         return reclamationRepository.save(reclamation);
     }
 
-    public void deleteById(int id){
+    public void deleteById(int id) {
         reclamationRepository.deleteById(id);
     }
 
-  
-    
+    public List<Reclamation> findByUtilisateur(String email) {
+        return reclamationRepository.findByUtilisateur_EmailUtil(email);
+    }
+    public List<Reclamation> findByDepartement(int idDepartement) {
+    return reclamationRepository.findByDepartement_IdDepartement(idDepartement);
+}
 }

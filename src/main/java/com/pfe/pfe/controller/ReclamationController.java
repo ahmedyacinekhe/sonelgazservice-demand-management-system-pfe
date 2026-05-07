@@ -39,6 +39,12 @@ public class ReclamationController {
         return reclamationService.findAll();
     }
 
+    // ✅ NOUVEAU : seulement les demandes de l'utilisateur connecté
+    @GetMapping("/mes-demandes")
+    public List<Reclamation> getMesDemandes(@AuthenticationPrincipal UserDetails userDetails) {
+        return reclamationService.findByUtilisateur(userDetails.getUsername());
+    }
+
     @GetMapping("/{id}")
     public Reclamation findById(@PathVariable int id) {
         return reclamationService.findById(id);
@@ -66,11 +72,10 @@ public class ReclamationController {
 
         Reclamation saved = reclamationService.save(reclamation);
 
-        // ✅ Statut BROUILLON automatique (id_etat = 1)
         DemandeEtatDetail etatDetail = new DemandeEtatDetail();
         DemandeEtatDetailId etatId = new DemandeEtatDetailId();
         etatId.setIdDemande(saved.getIdDemande());
-        etatId.setIdEtat(1); // BROUILLON
+        etatId.setIdEtat(1);
         etatDetail.setDemandeEtatDetailId(etatId);
         etatDetail.setDateEtat(new java.sql.Date(System.currentTimeMillis()));
         demandeEtatDetailService.save(etatDetail);
@@ -78,7 +83,6 @@ public class ReclamationController {
         return saved;
     }
 
-    // ✅ Modifier une demande BROUILLON (avec fichier)
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Reclamation updateWithFile(
             @PathVariable int id,
@@ -95,13 +99,11 @@ public class ReclamationController {
         return reclamationService.save(reclamation);
     }
 
-    // ✅ Modifier sans fichier (JSON simple)
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Reclamation update(@PathVariable int id, @RequestBody Reclamation reclamation) {
         return reclamationService.save(reclamation);
     }
 
-    // ✅ Changer le statut : BROUILLON → EN_ATTENTE
     @PutMapping("/{id}/statut/{idEtat}")
     public void changerStatut(@PathVariable int id, @PathVariable int idEtat) {
         demandeEtatDetailRepository.deleteByIdDemande(id);
@@ -116,15 +118,20 @@ public class ReclamationController {
     }
 
     @DeleteMapping("/{id}")
-@Transactional
-public void deleteById(@PathVariable int id) {
-    demandeEtatDetailRepository.deleteByIdDemande(id);
-    reclamationService.deleteById(id);
-}
-@GetMapping("/{id}/etat")
-public String getEtat(@PathVariable int id) {
-    List<DemandeEtatDetail> etats = demandeEtatDetailRepository.findByIdDemande(id);
-    if (etats.isEmpty()) return "INCONNU";
-    return etats.get(0).getEtatDemande().getLibelleEtat();
+    @Transactional
+    public void deleteById(@PathVariable int id) {
+        demandeEtatDetailRepository.deleteByIdDemande(id);
+        reclamationService.deleteById(id);
+    }
+
+    @GetMapping("/{id}/etat")
+    public String getEtat(@PathVariable int id) {
+        List<DemandeEtatDetail> etats = demandeEtatDetailRepository.findByIdDemande(id);
+        if (etats.isEmpty()) return "INCONNU";
+        return etats.get(0).getEtatDemande().getLibelleEtat();
+    }
+    @GetMapping("/departement/{idDepartement}")
+public List<Reclamation> getByDepartement(@PathVariable int idDepartement) {
+    return reclamationService.findByDepartement(idDepartement);
 }
 }

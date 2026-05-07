@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -37,6 +38,12 @@ public class RequeteController {
     @GetMapping
     public List<Requete> findAll() {
         return requeteService.findAll();
+    }
+
+    // ✅ NOUVEAU : seulement les demandes de l'utilisateur connecté
+    @GetMapping("/mes-demandes")
+    public List<Requete> getMesDemandes(@AuthenticationPrincipal UserDetails userDetails) {
+        return requeteService.findByUtilisateur(userDetails.getUsername());
     }
 
     @GetMapping("/{id}")
@@ -66,11 +73,10 @@ public class RequeteController {
 
         Requete saved = requeteService.save(requete);
 
-        // ✅ Statut BROUILLON automatique (id_etat = 1)
         DemandeEtatDetail etatDetail = new DemandeEtatDetail();
         DemandeEtatDetailId etatId = new DemandeEtatDetailId();
         etatId.setIdDemande(saved.getIdDemande());
-        etatId.setIdEtat(1); // BROUILLON
+        etatId.setIdEtat(1);
         etatDetail.setDemandeEtatDetailId(etatId);
         etatDetail.setDateEtat(new java.sql.Date(System.currentTimeMillis()));
         demandeEtatDetailService.save(etatDetail);
@@ -78,7 +84,6 @@ public class RequeteController {
         return saved;
     }
 
-    // ✅ Modifier une demande BROUILLON (avec fichier)
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Requete updateWithFile(
             @PathVariable int id,
@@ -95,19 +100,15 @@ public class RequeteController {
         return requeteService.save(requete);
     }
 
-    // ✅ Modifier sans fichier (JSON simple)
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Requete update(@PathVariable int id, @RequestBody Requete requete) {
         return requeteService.save(requete);
     }
 
-    // ✅ Changer le statut : BROUILLON → EN_ATTENTE
     @PutMapping("/{id}/statut/{idEtat}")
     public void changerStatut(@PathVariable int id, @PathVariable int idEtat) {
-        // Supprimer l'ancien statut
         demandeEtatDetailRepository.deleteByIdDemande(id);
 
-        // Créer le nouveau statut
         DemandeEtatDetail etatDetail = new DemandeEtatDetail();
         DemandeEtatDetailId etatDetailId = new DemandeEtatDetailId();
         etatDetailId.setIdDemande(id);
@@ -118,15 +119,20 @@ public class RequeteController {
     }
 
     @DeleteMapping("/{id}")
-@Transactional
-public void deleteById(@PathVariable int id) {
-    demandeEtatDetailRepository.deleteByIdDemande(id);
-    requeteService.deleteById(id);
-}
-@GetMapping("/{id}/etat")
-public String getEtat(@PathVariable int id) {
-    List<DemandeEtatDetail> etats = demandeEtatDetailRepository.findByIdDemande(id);
-    if (etats.isEmpty()) return "INCONNU";
-    return etats.get(0).getEtatDemande().getLibelleEtat();
+    @Transactional
+    public void deleteById(@PathVariable int id) {
+        demandeEtatDetailRepository.deleteByIdDemande(id);
+        requeteService.deleteById(id);
+    }
+
+    @GetMapping("/{id}/etat")
+    public String getEtat(@PathVariable int id) {
+        List<DemandeEtatDetail> etats = demandeEtatDetailRepository.findByIdDemande(id);
+        if (etats.isEmpty()) return "INCONNU";
+        return etats.get(0).getEtatDemande().getLibelleEtat();
+    }
+    @GetMapping("/departement/{idDepartement}")
+public List<Requete> getByDepartement(@PathVariable int idDepartement) {
+    return requeteService.findByDepartement(idDepartement);
 }
 }

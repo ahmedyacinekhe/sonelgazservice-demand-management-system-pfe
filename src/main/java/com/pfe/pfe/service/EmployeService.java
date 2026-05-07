@@ -13,62 +13,70 @@ import com.pfe.pfe.repository.EmployeRepository;
 
 @Service
 public class EmployeService {
+
     @Autowired
-    private EmployeRepository employeRepository ;
-@Autowired
-private DepartementRepository departementRepository;
-@Autowired
-private UtilisateurRepository utilisateurRepository;
+    private EmployeRepository employeRepository;
+    @Autowired
+    private DepartementRepository departementRepository;
+    @Autowired
+    private UtilisateurRepository utilisateurRepository;
 
+    public void changerDepartement(int idUtil, int idDepartement) {
+        Utilisateur utilisateur = utilisateurRepository.findById(idUtil)
+            .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-public void changerDepartement(int idUtil, int idDepartement) {
-    System.out.println("🔍 changerDepartement appelé: idUtil=" + idUtil + ", idDepartement=" + idDepartement);
-    
-    Utilisateur utilisateur = utilisateurRepository.findById(idUtil)
-        .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-    
-    System.out.println("✅ Utilisateur trouvé: " + utilisateur.getEmailUtil());
+        Departement nouveauDept = departementRepository.findById(idDepartement)
+            .orElseThrow(() -> new RuntimeException("Département non trouvé"));
 
-    Departement nouveauDept = departementRepository.findById(idDepartement)
-        .orElseThrow(() -> new RuntimeException("Département non trouvé"));
-
-    System.out.println("✅ Département trouvé: " + nouveauDept.getNomDepartement());
-
-    if (utilisateur instanceof Employe employe) {
-        System.out.println("✅ C'est un employé !");
-        Departement ancienDept = employe.getDepartement();
-        if (ancienDept != null && ancienDept.getNombreEmployes() > 0) {
-            ancienDept.setNombreEmployes(ancienDept.getNombreEmployes() - 1);
-            departementRepository.save(ancienDept);
+        if (utilisateur instanceof Employe employe) {
+            Departement ancienDept = employe.getDepartement();
+            if (ancienDept != null && ancienDept.getNombreEmployes() != null && ancienDept.getNombreEmployes() > 0) {
+                ancienDept.setNombreEmployes(ancienDept.getNombreEmployes() - 1);
+                departementRepository.save(ancienDept);
+            }
+            employe.setDepartement(nouveauDept);
+            employeRepository.save(employe);
         }
-        employe.setDepartement(nouveauDept);
-        employeRepository.save(employe);
-    } else {
-        System.out.println("❌ PAS un employé - type: " + utilisateur.getClass().getSimpleName());
+
+        if (nouveauDept.getNombreEmployes() == null) nouveauDept.setNombreEmployes(0);
+        nouveauDept.setNombreEmployes(nouveauDept.getNombreEmployes() + 1);
+        departementRepository.save(nouveauDept);
     }
 
-    nouveauDept.setNombreEmployes(nouveauDept.getNombreEmployes() + 1);
-    departementRepository.save(nouveauDept);
-}
-
-    public List<Employe> findAll(){
+    public List<Employe> findAll() {
         return employeRepository.findAll();
     }
-    public List<Employe> findByDepartement(int idDepartement) {
-    return employeRepository.findByDepartement_IdDepartement(idDepartement);
-}
 
-    public Employe findById(int id){
+    public List<Employe> findByDepartement(int idDepartement) {
+        return employeRepository.findByDepartement_IdDepartement(idDepartement);
+    }
+
+    public Employe findById(int id) {
         return employeRepository.findById(id).orElse(null);
     }
 
-    public Employe save(Employe employe){
-        return employeRepository.save(employe);
+    public Employe save(Employe employe) {
+        Employe saved = employeRepository.save(employe);
+
+        Departement dept = employe.getDepartement();
+        if (dept != null) {
+            if (dept.getNombreEmployes() == null) dept.setNombreEmployes(0);
+            dept.setNombreEmployes(dept.getNombreEmployes() + 1);
+            departementRepository.save(dept);
+        }
+
+        return saved;
     }
 
-
-    public void deleteById(int id){
+    public void deleteById(int id) {
+        Employe employe = employeRepository.findById(id).orElse(null);
+        if (employe != null) {
+            Departement dept = employe.getDepartement();
+            if (dept != null && dept.getNombreEmployes() != null && dept.getNombreEmployes() > 0) {
+                dept.setNombreEmployes(dept.getNombreEmployes() - 1);
+                departementRepository.save(dept);
+            }
+        }
         employeRepository.deleteById(id);
     }
-
 }

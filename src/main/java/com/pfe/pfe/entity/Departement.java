@@ -26,7 +26,7 @@ public class Departement {
     private String contactDepartement;
 
     @Column(name="nombre_employes")
-    private int nombreEmployes;
+    private Integer nombreEmployes;
 
     @ManyToOne
     @JoinColumn(name="id_direction")
