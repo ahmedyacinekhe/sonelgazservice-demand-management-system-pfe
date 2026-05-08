@@ -11,18 +11,15 @@
   </button>
   <button class="hist-tab" [class.active]="activeTab === 'REQUETE'"
           (click)="activeTab = 'REQUETE'">
-    📝 Requêtes
-    <span class="tab-count">{{ countType('REQUETE') }}</span>
+    📝 Requêtes <span class="tab-count">{{ countType('REQUETE') }}</span>
   </button>
   <button class="hist-tab" [class.active]="activeTab === 'PROPOSITION'"
           (click)="activeTab = 'PROPOSITION'">
-    📋 Propositions
-    <span class="tab-count">{{ countType('PROPOSITION') }}</span>
+    📋 Propositions <span class="tab-count">{{ countType('PROPOSITION') }}</span>
   </button>
   <button class="hist-tab" [class.active]="activeTab === 'RECLAMATION'"
           (click)="activeTab = 'RECLAMATION'">
-    📢 Réclamations
-    <span class="tab-count">{{ countType('RECLAMATION') }}</span>
+    📢 Réclamations <span class="tab-count">{{ countType('RECLAMATION') }}</span>
   </button>
 </div>
 
@@ -36,17 +33,13 @@
 
 <!-- LISTE -->
 <div *ngIf="!loading && !erreur">
-
-  <!-- Vide -->
   <div *ngIf="demandesFiltrees().length === 0" class="empty-section">
     <div class="empty-icon-text">📭</div>
     <p>Aucune demande trouvée</p>
   </div>
 
-  <!-- Cartes -->
   <div class="hist-list" *ngIf="demandesFiltrees().length > 0">
-    <div class="hist-card" *ngFor="let d of demandesFiltrees()"
-         (click)="voirDetail(d)">
+    <div class="hist-card" *ngFor="let d of demandesFiltrees()" (click)="voirDetail(d)">
 
       <div class="hist-card-left">
         <div class="hist-type-icon">{{ getTypeIcon(d.typeDemande) }}</div>
@@ -66,9 +59,6 @@
           <span *ngIf="d.typeRequete">Type : {{ d.typeRequete }}</span>
           <span *ngIf="d.typeProposition">Type : {{ d.typeProposition }}</span>
           <span *ngIf="d.typeReclamation">Type : {{ d.typeReclamation }}</span>
-          <span *ngIf="d.niveauUrgence" class="urgence-{{ d.niveauUrgence | lowercase }}">
-            🔴 Urgence : {{ d.niveauUrgence }}
-          </span>
         </div>
       </div>
 
@@ -76,13 +66,12 @@
         <button class="btn-table btn-info"   (click)="voirDetail(d)">Voir</button>
         <button class="btn-table btn-danger" (click)="supprimer(d)">Supprimer</button>
       </div>
-
     </div>
   </div>
 </div>
 
 <!-- ========================================================= -->
-<!-- MODAL DÉTAIL — corrigé : label et valeur bien séparés     -->
+<!-- MODAL DÉTAIL                                              -->
 <!-- ========================================================= -->
 <div class="modal-overlay" *ngIf="selectedDemande" (click)="fermerDetail()">
   <div class="modal-card" (click)="$event.stopPropagation()"
@@ -96,138 +85,265 @@
         Détail — {{ getTypeLabel(selectedDemande.typeDemande) }}
       </h3>
       <button class="btn-table btn-gray"
-              style="width:32px; height:32px; border-radius:50%; padding:0;
-                     font-size:15px; line-height:1; flex-shrink:0;"
+              style="width:32px; height:32px; border-radius:50%; padding:0; font-size:15px;"
               (click)="fermerDetail()">✕</button>
     </div>
 
     <hr style="border:none; border-top:1px solid #e8eaf6; margin-bottom:20px;"/>
 
-    <!-- INFOS DEMANDE : grille 2 colonnes label | valeur -->
-    <div style="display:grid; grid-template-columns:150px 1fr; gap:14px 20px; font-size:14px;">
+    <!-- ── VUE NORMALE ── -->
+    <ng-container *ngIf="!modeModification">
 
-      <span style="color:#78909c; font-weight:600; align-self:center;">Statut</span>
-      <span>
-        <span class="badge" [ngClass]="getStatutClass(selectedDemande.statut)">
+      <div style="display:grid; grid-template-columns:150px 1fr; gap:14px 20px; font-size:14px;">
+
+        <span style="color:#78909c; font-weight:600;">Statut</span>
+        <span><span class="badge" [ngClass]="getStatutClass(selectedDemande.statut)">
           {{ getStatutLabel(selectedDemande.statut) }}
+        </span></span>
+
+        <span style="color:#78909c; font-weight:600;">Département</span>
+        <span style="color:#212121; font-weight:500;">{{ selectedDemande.departement?.nomDepartement || '—' }}</span>
+
+        <span style="color:#78909c; font-weight:600; align-self:flex-start; padding-top:3px;">Description</span>
+        <span style="color:#212121; line-height:1.6;">{{ selectedDemande.description }}</span>
+
+        <ng-container *ngIf="selectedDemande.typeRequete">
+          <span style="color:#78909c; font-weight:600;">Type requête</span>
+          <span style="color:#212121; font-weight:500;">{{ selectedDemande.typeRequete }}</span>
+        </ng-container>
+
+        <ng-container *ngIf="selectedDemande.typeProposition">
+          <span style="color:#78909c; font-weight:600;">Type proposition</span>
+          <span style="color:#212121; font-weight:500;">{{ selectedDemande.typeProposition }}</span>
+        </ng-container>
+
+        <ng-container *ngIf="selectedDemande.typeReclamation">
+          <span style="color:#78909c; font-weight:600;">Type réclamation</span>
+          <span style="color:#212121; font-weight:500;">{{ selectedDemande.typeReclamation }}</span>
+        </ng-container>
+
+        <ng-container *ngIf="selectedDemande.niveauUrgence">
+          <span style="color:#78909c; font-weight:600;">Urgence</span>
+          <span style="color:#212121; font-weight:500;">{{ selectedDemande.niveauUrgence }}</span>
+        </ng-container>
+
+        <span style="color:#78909c; font-weight:600;">Date</span>
+        <span style="color:#212121; font-weight:500;">
+          {{ (selectedDemande.dateDemande || selectedDemande.dateCreation || selectedDemande.dateSoumission) | date:'dd/MM/yyyy à HH:mm' }}
         </span>
-      </span>
 
-      <span style="color:#78909c; font-weight:600; align-self:center;">Département</span>
-      <span style="color:#212121; font-weight:500;">
-        {{ selectedDemande.departement?.nomDepartement || '—' }}
-      </span>
+        <!-- Remplacez uniquement la section "Pièce jointe" dans le modal (vue normale) -->
+<!-- Elle se trouve dans la grille <div style="display:grid..."> -->
 
-      <span style="color:#78909c; font-weight:600; align-self:flex-start; padding-top:3px;">Description</span>
-      <span style="color:#212121; line-height:1.6;">
-        {{ selectedDemande.description }}
-      </span>
-
-      <ng-container *ngIf="selectedDemande.typeRequete">
-        <span style="color:#78909c; font-weight:600; align-self:center;">Type requête</span>
-        <span style="color:#212121; font-weight:500;">{{ selectedDemande.typeRequete }}</span>
+<!-- ── PIÈCE JOINTE ── -->
+<span style="color:#78909c; font-weight:600; align-self:flex-start; padding-top:4px;">Pièce jointe</span>
+<div>
+  <!-- Fichier existant -->
+  <ng-container *ngIf="selectedDemande.pieceJointe; else pasDePJ">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+     <a [href]="'http://localhost:8082/Api/fichiers/view/' + selectedDemande.pieceJointe"
+   target="_blank"
+   style="color:#1565c0; text-decoration:none; font-weight:500; font-size:14px;">
+  📎 {{ selectedDemande.pieceJointe }}
+</a>
+      <!-- Boutons si brouillon et pas en mode upload -->
+      <ng-container *ngIf="estBrouillon(selectedDemande) && !modePieceJointe">
+        <button class="btn-pj btn-pj-remplacer" (click)="ouvrirEditionPJ()">🔄 Remplacer</button>
+        <button class="btn-pj btn-pj-supprimer" (click)="supprimerPJ()">🗑️</button>
       </ng-container>
-
-      <ng-container *ngIf="selectedDemande.typeProposition">
-        <span style="color:#78909c; font-weight:600; align-self:center;">Type proposition</span>
-        <span style="color:#212121; font-weight:500;">{{ selectedDemande.typeProposition }}</span>
-      </ng-container>
-
-      <ng-container *ngIf="selectedDemande.typeReclamation">
-        <span style="color:#78909c; font-weight:600; align-self:center;">Type réclamation</span>
-        <span style="color:#212121; font-weight:500;">{{ selectedDemande.typeReclamation }}</span>
-      </ng-container>
-
-      <ng-container *ngIf="selectedDemande.niveauUrgence">
-        <span style="color:#78909c; font-weight:600; align-self:center;">Urgence</span>
-        <span style="color:#212121; font-weight:500;">{{ selectedDemande.niveauUrgence }}</span>
-      </ng-container>
-
-      <span style="color:#78909c; font-weight:600; align-self:center;">Date</span>
-      <span style="color:#212121; font-weight:500;">
-        {{ (selectedDemande.dateDemande || selectedDemande.dateCreation || selectedDemande.dateSoumission) | date:'dd/MM/yyyy à HH:mm' }}
-      </span>
-
-      <ng-container *ngIf="selectedDemande.cheminFichier">
-        <span style="color:#78909c; font-weight:600; align-self:center;">Pièce jointe</span>
-        <a [href]="'http://localhost:8082/' + selectedDemande.cheminFichier"
-           target="_blank"
-           style="color:#1565c0; text-decoration:none; font-weight:500;">
-          📎 Voir le fichier
-        </a>
-      </ng-container>
-
-      <ng-container *ngIf="selectedDemande.commentaireTraitement">
-        <span style="color:#78909c; font-weight:600; align-self:flex-start; padding-top:3px;">Commentaire</span>
-        <span style="color:#212121; line-height:1.6;">{{ selectedDemande.commentaireTraitement }}</span>
-      </ng-container>
-
     </div>
+  </ng-container>
 
-    <hr style="border:none; border-top:1px solid #e8eaf6; margin:20px 0;"/>
-
-    <!-- RÉPONSE DU RESPONSABLE -->
-    <p style="font-weight:700; font-size:14px; margin:0 0 12px 0; color:#1a237e;">
-      💬 Réponse du responsable
-    </p>
-
-    <div *ngIf="reponseLoading"
-         style="display:flex; align-items:center; gap:8px; color:#888; font-size:13px; padding:10px 0;">
-      <span class="spinner" style="width:14px; height:14px;"></span>
-      Chargement de la réponse...
-    </div>
-
-    <div *ngIf="!reponseLoading && reponseDemande"
-         style="padding:14px 16px; background:#e8f5e9; border-left:4px solid #43a047; border-radius:8px;">
-      <p style="margin:0 0 8px 0; color:#1b5e20; font-size:14px; line-height:1.6;">
-        {{ reponseDemande.contenuReponse }}
-      </p>
-      <p style="margin:0; font-size:12px; color:#558b2f;">
-        📅 {{ reponseDemande.dateReponse | date:'dd/MM/yyyy à HH:mm' }}
-      </p>
-    </div>
-
-    <div *ngIf="!reponseLoading && !reponseDemande && !estBrouillon(selectedDemande)"
-         style="padding:12px 16px; background:#fff8e1; border-left:4px solid #f9a825;
-                border-radius:8px; font-size:13px; color:#795548;">
-      ⏳ Aucune réponse pour le moment. Votre demande est en cours de traitement.
-    </div>
-
-    <div *ngIf="!reponseLoading && estBrouillon(selectedDemande)"
-         style="padding:12px 16px; background:#f5f5f5; border-left:4px solid #bdbdbd;
-                border-radius:8px; font-size:13px; color:#757575;">
-      📝 Confirmez votre demande pour qu'elle soit traitée par un responsable.
-    </div>
-
-    <!-- Message soumission -->
-    <div *ngIf="messageSoumission"
-         class="demande-alert"
-         [ngClass]="{
-           'demande-alert-success': messageType === 'success',
-           'demande-alert-info':    messageType === 'info',
-           'demande-alert-error':   messageType === 'error'
-         }"
-         style="margin-top:16px;">
-      {{ messageSoumission }}
-    </div>
-
-    <!-- Boutons soumission (brouillon uniquement) -->
-    <div *ngIf="estBrouillon(selectedDemande)"
-         style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
-      <button class="btn-table btn-warn" (click)="soumettreBrouillon(selectedDemande)">
-        📝 Garder en brouillon
-      </button>
-      <button class="btn-action" (click)="confirmerSoumission(selectedDemande)">
-        ✅ Confirmer la soumission
+  <ng-template #pasDePJ>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span style="color:#9e9e9e; font-style:italic; font-size:13px;">Aucune pièce jointe</span>
+      <button *ngIf="estBrouillon(selectedDemande) && !modePieceJointe"
+              class="btn-pj btn-pj-ajouter" (click)="ouvrirEditionPJ()">
+        ➕ Ajouter
       </button>
     </div>
+  </ng-template>
 
-    <!-- Message demande déjà soumise -->
-    <div *ngIf="!estBrouillon(selectedDemande)"
-         style="margin-top:16px; padding:10px 14px; background:#e3f0ff; color:#1565c0;
-                border-left:4px solid #1565c0; border-radius:6px; font-size:13px;">
-      🔒 Cette demande a été soumise et ne peut plus être modifiée.
+  <!-- Zone d'upload (Remplacer ou Ajouter) -->
+  <div *ngIf="modePieceJointe" class="pj-upload-zone">
+    <p class="pj-upload-hint">PDF, JPG, PNG, DOC, DOCX — max 5 Mo</p>
+
+    <input type="file" id="pjInput"
+           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+           (change)="onFichierChange($event)"
+           style="display:none;" />
+    <label for="pjInput" class="pj-input-label">
+      📂 {{ nouvellePJNom || 'Choisir un fichier…' }}
+    </label>
+
+    <p *ngIf="pjError" class="pj-error">⚠️ {{ pjError }}</p>
+
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button class="btn-action"
+              [disabled]="!nouvellePJ || pjLoading"
+              (click)="sauvegarderPJ()">
+        {{ pjLoading ? '⏳ Envoi…' : '💾 Sauvegarder' }}
+      </button>
+      <button class="btn-table btn-gray" (click)="annulerEditionPJ()">Annuler</button>
     </div>
+  </div>
+</div>
+<!-- ── FIN PIÈCE JOINTE ── -->
+
+      </div>
+
+      <hr style="border:none; border-top:1px solid #e8eaf6; margin:20px 0;"/>
+
+      <!-- Réponse du responsable -->
+      <p style="font-weight:700; font-size:14px; margin:0 0 12px 0; color:#1a237e;">💬 Réponse du responsable</p>
+
+      <div *ngIf="reponseLoading"
+           style="display:flex; align-items:center; gap:8px; color:#888; font-size:13px; padding:10px 0;">
+        <span class="spinner" style="width:14px; height:14px;"></span> Chargement...
+      </div>
+
+      <div *ngIf="!reponseLoading && reponseDemande"
+           style="padding:14px 16px; background:#e8f5e9; border-left:4px solid #43a047; border-radius:8px;">
+        <p style="margin:0 0 8px 0; color:#1b5e20; font-size:14px; line-height:1.6;">
+          {{ reponseDemande.contenuReponse }}
+        </p>
+        <p style="margin:0; font-size:12px; color:#558b2f;">
+          📅 {{ reponseDemande.dateReponse | date:'dd/MM/yyyy à HH:mm' }}
+        </p>
+      </div>
+
+      <div *ngIf="!reponseLoading && !reponseDemande && !estBrouillon(selectedDemande)"
+           style="padding:12px 16px; background:#fff8e1; border-left:4px solid #f9a825;
+                  border-radius:8px; font-size:13px; color:#795548;">
+        ⏳ Aucune réponse pour le moment. Votre demande est en cours de traitement.
+      </div>
+
+      <div *ngIf="!reponseLoading && estBrouillon(selectedDemande)"
+           style="padding:12px 16px; background:#f5f5f5; border-left:4px solid #bdbdbd;
+                  border-radius:8px; font-size:13px; color:#757575;">
+        📝 Confirmez votre demande pour qu'elle soit traitée par un responsable.
+      </div>
+
+      <!-- Message -->
+      <div *ngIf="messageSoumission" class="demande-alert"
+           [ngClass]="{
+             'demande-alert-success': messageType === 'success',
+             'demande-alert-info':    messageType === 'info',
+             'demande-alert-error':   messageType === 'error'
+           }"
+           style="margin-top:16px;">
+        {{ messageSoumission }}
+      </div>
+
+      <!-- Boutons brouillon -->
+      <div *ngIf="estBrouillon(selectedDemande)"
+           style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
+        <button class="btn-table btn-warn" (click)="ouvrirModification()">
+          ✏️ Modifier
+        </button>
+        <button class="btn-table btn-warn" (click)="soumettreBrouillon(selectedDemande)">
+          📝 Garder en brouillon
+        </button>
+        <button class="btn-action" (click)="confirmerSoumission(selectedDemande)">
+          ✅ Confirmer la soumission
+        </button>
+      </div>
+
+      <div *ngIf="!estBrouillon(selectedDemande)"
+           style="margin-top:16px; padding:10px 14px; background:#e3f0ff; color:#1565c0;
+                  border-left:4px solid #1565c0; border-radius:6px; font-size:13px;">
+        🔒 Cette demande a été soumise et ne peut plus être modifiée.
+      </div>
+
+    </ng-container>
+
+    <!-- ── FORMULAIRE MODIFICATION ── -->
+    <ng-container *ngIf="modeModification">
+
+      <p style="font-weight:700; font-size:15px; color:#1a237e; margin:0 0 16px 0;">
+        ✏️ Modifier la demande
+      </p>
+
+      <!-- Description -->
+      <div class="modif-field">
+        <label class="modif-label">Description</label>
+        <textarea class="modif-input" rows="4"
+                  [(ngModel)]="formModification.description"
+                  placeholder="Description de la demande..."></textarea>
+      </div>
+
+      <!-- Département -->
+      <div class="modif-field">
+        <label class="modif-label">Département concerné</label>
+        <select class="modif-input" [(ngModel)]="formModification.idDepartement">
+          <option value="">— Choisir un département —</option>
+          <option *ngFor="let dep of departements" [value]="dep.idDepartement">
+            {{ dep.nomDepartement }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Type selon typeDemande -->
+      <div class="modif-field" *ngIf="selectedDemande.typeDemande === 'REQUETE'">
+        <label class="modif-label">Type de requête</label>
+        <select class="modif-input" [(ngModel)]="formModification.typeRequete">
+          <option value="">— Choisir —</option>
+          <option value="CONGE">Congé</option>
+          <option value="MATERIEL">Matériel</option>
+          <option value="FORMATION">Formation</option>
+          <option value="AUTRE">Autre</option>
+        </select>
+      </div>
+
+      <div class="modif-field" *ngIf="selectedDemande.typeDemande === 'PROPOSITION'">
+        <label class="modif-label">Type de proposition</label>
+        <select class="modif-input" [(ngModel)]="formModification.typeProposition">
+          <option value="">— Choisir —</option>
+          <option value="AMELIORATION">Amélioration</option>
+          <option value="SUGGESTION">Suggestion</option>
+          <option value="INNOVATION">Innovation</option>
+        </select>
+      </div>
+
+      <div class="modif-field" *ngIf="selectedDemande.typeDemande === 'RECLAMATION'">
+        <label class="modif-label">Type de réclamation</label>
+        <select class="modif-input" [(ngModel)]="formModification.typeReclamation">
+          <option value="">— Choisir —</option>
+          <option value="SALAIRE">Salaire</option>
+          <option value="CONDITIONS">Conditions de travail</option>
+          <option value="HARCELEMENT">Harcèlement</option>
+          <option value="AUTRE">Autre</option>
+        </select>
+        <label class="modif-label" style="margin-top:12px;">Niveau d'urgence</label>
+        <select class="modif-input" [(ngModel)]="formModification.niveauUrgence">
+          <option value="">— Choisir —</option>
+          <option value="FAIBLE">Faible</option>
+          <option value="MOYEN">Moyen</option>
+          <option value="URGENT">Urgent</option>
+        </select>
+      </div>
+
+      <!-- Message -->
+      <div *ngIf="messageSoumission" class="demande-alert"
+           [ngClass]="{
+             'demande-alert-success': messageType === 'success',
+             'demande-alert-error':   messageType === 'error'
+           }"
+           style="margin-top:12px;">
+        {{ messageSoumission }}
+      </div>
+
+      <!-- Boutons -->
+      <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
+        <button class="btn-table btn-gray" (click)="annulerModification()" [disabled]="loadingModif">
+          Annuler
+        </button>
+        <button class="btn-action" (click)="sauvegarderModification()" [disabled]="loadingModif">
+          {{ loadingModif ? '⏳ Sauvegarde...' : '💾 Sauvegarder' }}
+        </button>
+      </div>
+
+    </ng-container>
 
     <!-- Fermer -->
     <div style="display:flex; justify-content:flex-end; margin-top:20px;">

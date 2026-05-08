@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Router } from '@angular/router';                         // ← AJOUT
+import { Router } from '@angular/router';
 import { RequeteService } from '../../core/services/requete.service';
 import { ReclamationService } from '../../core/services/reclamation.service';
 import { PropositionService } from '../../core/services/proposition.service';
@@ -29,16 +29,24 @@ export class HistoriqueComponent implements OnInit {
   reponseDemande: any = null;
   reponseLoading = false;
 
-  // ── Mode modification inline ──────────────────────────────
+  // ── Mode modification ──
   modeModification = false;
   formModification: any = {};
-  // ─────────────────────────────────────────────────────────
+  departements: any[] = [];
+  loadingModif = false;
+
+  // ── Pièce jointe ──
+  modePieceJointe = false;
+  nouvellePJ: File | null = null;
+  nouvellePJNom = '';
+  pjError = '';
+  pjLoading = false;
 
   private baseUrl = 'http://localhost:8082';
 
   constructor(
     private http: HttpClient,
-    private router: Router,                                       // ← AJOUT
+    private router: Router,
     private requeteService: RequeteService,
     private reclamationService: ReclamationService,
     private propositionService: PropositionService
@@ -61,28 +69,39 @@ export class HistoriqueComponent implements OnInit {
       propositions: this.propositionService.getMesDemandes()
     }).subscribe({
       next: ({ requetes, reclamations, propositions }) => {
-  console.log('requetes count:', requetes?.length);
-  console.log('reclamations count:', reclamations?.length);
-  console.log('propositions count:', propositions?.length);
-        const r  = (requetes     || []).map((d: any) => ({ ...d, typeDemande: 'REQUETE' }));
-        const rc = (reclamations || []).map((d: any) => ({ ...d, typeDemande: 'RECLAMATION' }));
-        const p  = (propositions || []).map((d: any) => ({ ...d, typeDemande: 'PROPOSITION' }));
+  const r  = (requetes     || []).map((d: any) => ({
+    ...d,
+    typeDemande: 'REQUETE',
+    cheminFichier: d.pieceJointe ? `uploads/${d.pieceJointe}` : null,
+    nomFichier:    d.pieceJointe || null
+  }));
+  const rc = (reclamations || []).map((d: any) => ({
+    ...d,
+    typeDemande: 'RECLAMATION',
+    cheminFichier: d.pieceJointe ? `uploads/${d.pieceJointe}` : null,
+    nomFichier:    d.pieceJointe || null
+  }));
+  const p  = (propositions || []).map((d: any) => ({
+    ...d,
+    typeDemande: 'PROPOSITION',
+    cheminFichier: d.pieceJointe ? `uploads/${d.pieceJointe}` : null,
+    nomFichier:    d.pieceJointe || null
+  }));
 
-        this.toutesLesDemandes = [...r, ...rc, ...p].sort((a, b) => {
-          const da = new Date(a.dateDemande || 0).getTime();
-          const db = new Date(b.dateDemande || 0).getTime();
-          return db - da;
-        });
+  this.toutesLesDemandes = [...r, ...rc, ...p].sort((a, b) => {
+    const da = new Date(a.dateDemande || a.dateCreation || 0).getTime();
+    const db = new Date(b.dateDemande || b.dateCreation || 0).getTime();
+    return db - da; // plus récent en premier
+  });
 
-        this.chargerEtats();
-        this.loading = false;
-      },
+  this.chargerEtats();
+  this.loading = false;
+},
       error: () => {
         this.erreur = 'Erreur lors du chargement de l\'historique.';
         this.loading = false;
       }
     });
-    
   }
 
   chargerEtats() {
@@ -100,7 +119,14 @@ export class HistoriqueComponent implements OnInit {
     });
   }
 
-  // ===== RÉPONSE DU RESPONSABLE =====
+  chargerDepartements() {
+    if (this.departements.length > 0) return;
+    this.http.get<any[]>(`${this.baseUrl}/Api/departements`, { headers: this.getHeaders() })
+      .subscribe({
+        next: (deps) => { this.departements = deps || []; },
+        error: () => { this.departements = []; }
+      });
+  }
 
   chargerReponse(demande: any) {
     const id = demande.idDemande;
@@ -189,7 +215,11 @@ export class HistoriqueComponent implements OnInit {
     this.selectedDemande = demande;
     this.messageSoumission = '';
     this.reponseDemande = null;
-    this.modeModification = false;         // reset le mode modif
+    this.modeModification = false;
+    this.modePieceJointe = false;
+    this.nouvellePJ = null;
+    this.nouvellePJNom = '';
+    this.pjError = '';
     this.chargerReponse(demande);
   }
 
@@ -199,18 +229,23 @@ export class HistoriqueComponent implements OnInit {
     this.reponseDemande = null;
     this.reponseLoading = false;
     this.modeModification = false;
+    this.modePieceJointe = false;
+    this.nouvellePJ = null;
+    this.nouvellePJNom = '';
+    this.pjError = '';
   }
 
   // ===== MODIFICATION =====
 
   ouvrirModification() {
-    // Pré-remplir le formulaire avec les valeurs actuelles
+    this.chargerDepartements();
     this.formModification = {
       description:      this.selectedDemande.description || '',
       typeRequete:      this.selectedDemande.typeRequete || '',
       typeProposition:  this.selectedDemande.typeProposition || '',
       typeReclamation:  this.selectedDemande.typeReclamation || '',
-      niveauUrgence:    this.selectedDemande.niveauUrgence || ''
+      niveauUrgence:    this.selectedDemande.niveauUrgence || '',
+      idDepartement:    this.selectedDemande.departement?.idDepartement || ''
     };
     this.modeModification = true;
     this.messageSoumission = '';
@@ -222,34 +257,203 @@ export class HistoriqueComponent implements OnInit {
   }
 
   sauvegarderModification() {
+  const id = this.getDemandeId(this.selectedDemande);
+  if (!id) return;
+
+  const type = this.selectedDemande.typeDemande;
+  const endpoint =
+    type === 'REQUETE'     ? `${this.baseUrl}/Api/requetes/${id}` :
+    type === 'RECLAMATION' ? `${this.baseUrl}/Api/reclamations/${id}` :
+                             `${this.baseUrl}/Api/propositions/${id}`;
+
+  // CRITIQUE : inclure TOUS les champs de la demande existante
+  // pour ne pas écraser avec des valeurs null
+  const dataObj: any = {
+    idDemande:   id,
+    description: this.formModification.description,
+    dateDemande: this.selectedDemande.dateDemande,
+    utilisateur: this.selectedDemande.utilisateur,   // ← conserver l'utilisateur
+    pieceJointe: this.selectedDemande.pieceJointe,   // ← conserver la PJ existante
+    departement: { idDepartement: Number(this.formModification.idDepartement) }
+  };
+
+  if (type === 'REQUETE')     dataObj.typeRequete     = this.formModification.typeRequete;
+  if (type === 'PROPOSITION') dataObj.typeProposition = this.formModification.typeProposition;
+  if (type === 'RECLAMATION') {
+    dataObj.typeReclamation = this.formModification.typeReclamation;
+    dataObj.niveauUrgence   = this.formModification.niveauUrgence;
+  }
+
+  const formData = new FormData();
+  formData.append('data', new Blob([JSON.stringify(dataObj)], { type: 'application/json' }));
+
+  this.loadingModif = true;
+  this.http.put<any>(endpoint, formData, { headers: this.getHeaders() }).subscribe({
+    next: (res) => {
+      // Mettre à jour l'affichage localement
+      this.selectedDemande.description    = res.description    || dataObj.description;
+      this.selectedDemande.typeRequete     = res.typeRequete     || dataObj.typeRequete;
+      this.selectedDemande.typeProposition = res.typeProposition || dataObj.typeProposition;
+      this.selectedDemande.typeReclamation = res.typeReclamation || dataObj.typeReclamation;
+      this.selectedDemande.niveauUrgence   = res.niveauUrgence   || dataObj.niveauUrgence;
+
+      const dep = this.departements.find(
+        d => d.idDepartement == this.formModification.idDepartement
+      );
+      if (dep) this.selectedDemande.departement = dep;
+
+      // Aussi mettre à jour dans la liste
+      const idx = this.toutesLesDemandes.findIndex(
+        d => d.idDemande === id && d.typeDemande === type
+      );
+      if (idx !== -1) this.toutesLesDemandes[idx] = { ...this.selectedDemande };
+
+      this.modeModification  = false;
+      this.loadingModif      = false;
+      this.messageSoumission = '✅ Demande modifiée avec succès.';
+      this.messageType       = 'success';
+    },
+    error: (err) => {
+      console.error('Erreur modification:', err);
+      this.loadingModif      = false;
+      this.messageSoumission = '❌ Erreur lors de la modification.';
+      this.messageType       = 'error';
+    }
+  });
+}
+
+  // ===== PIÈCE JOINTE =====
+
+  ouvrirEditionPJ() {
+    this.modePieceJointe = true;
+    this.nouvellePJ = null;
+    this.nouvellePJNom = '';
+    this.pjError = '';
+  }
+
+  annulerEditionPJ() {
+    this.modePieceJointe = false;
+    this.nouvellePJ = null;
+    this.nouvellePJNom = '';
+    this.pjError = '';
+  }
+
+  onFichierChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    this.pjError = '';
+    this.nouvellePJ = null;
+    this.nouvellePJNom = '';
+
+    if (!file) return;
+
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg', 'image/png',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    const maxSize = 5 * 1024 * 1024; // 5 Mo
+
+    if (!allowedTypes.includes(file.type)) {
+      this.pjError = 'Format non accepté. Utilisez PDF, JPG, PNG, DOC ou DOCX.';
+      return;
+    }
+    if (file.size > maxSize) {
+      this.pjError = 'Fichier trop volumineux (max 5 Mo).';
+      return;
+    }
+
+    this.nouvellePJ = file;
+    this.nouvellePJNom = file.name;
+  }
+
+  sauvegarderPJ() {
+  if (!this.nouvellePJ) return;
+  const id = this.getDemandeId(this.selectedDemande);
+  if (!id) return;
+
+  const type = this.selectedDemande.typeDemande;
+  const endpoint =
+    type === 'REQUETE'     ? `${this.baseUrl}/Api/requetes/${id}` :
+    type === 'RECLAMATION' ? `${this.baseUrl}/Api/reclamations/${id}` :
+                             `${this.baseUrl}/Api/propositions/${id}`;
+
+  // CRITIQUE : conserver tous les champs existants
+  const dataObj: any = {
+    idDemande:   id,
+    description: this.selectedDemande.description,
+    dateDemande: this.selectedDemande.dateDemande,
+    utilisateur: this.selectedDemande.utilisateur,
+    departement: this.selectedDemande.departement
+  };
+
+  if (type === 'REQUETE')     dataObj.typeRequete     = this.selectedDemande.typeRequete;
+  if (type === 'PROPOSITION') dataObj.typeProposition = this.selectedDemande.typeProposition;
+  if (type === 'RECLAMATION') {
+    dataObj.typeReclamation = this.selectedDemande.typeReclamation;
+    dataObj.niveauUrgence   = this.selectedDemande.niveauUrgence;
+  }
+
+  const formData = new FormData();
+  formData.append('data',    new Blob([JSON.stringify(dataObj)], { type: 'application/json' }));
+  formData.append('fichier', this.nouvellePJ);
+
+  this.pjLoading = true;
+  this.http.put<any>(endpoint, formData, { headers: this.getHeaders() }).subscribe({
+    next: (res) => {
+      // pieceJointe est le nom du champ dans l'entité Java
+      const nomPJ = res?.pieceJointe || this.nouvellePJNom;
+      this.selectedDemande.pieceJointe   = nomPJ;
+      this.selectedDemande.cheminFichier = `uploads/${nomPJ}`;
+      this.selectedDemande.nomFichier    = nomPJ;
+
+      // Mettre à jour dans la liste aussi
+      const idx = this.toutesLesDemandes.findIndex(
+        d => d.idDemande === id && d.typeDemande === type
+      );
+      if (idx !== -1) {
+        this.toutesLesDemandes[idx].pieceJointe   = nomPJ;
+        this.toutesLesDemandes[idx].cheminFichier = `uploads/${nomPJ}`;
+      }
+
+      this.pjLoading        = false;
+      this.modePieceJointe  = false;
+      this.nouvellePJ       = null;
+      this.nouvellePJNom    = '';
+      this.messageSoumission = '✅ Pièce jointe sauvegardée.';
+      this.messageType       = 'success';
+    },
+    error: (err) => {
+      console.error('Erreur PJ:', err);
+      this.pjLoading = false;
+      this.pjError   = 'Erreur lors de l\'envoi du fichier.';
+    }
+  });
+}
+
+  supprimerPJ() {
+    if (!confirm('Supprimer la pièce jointe ?')) return;
     const id = this.getDemandeId(this.selectedDemande);
     if (!id) return;
 
     const type = this.selectedDemande.typeDemande;
-    const endpoint =
-      type === 'REQUETE'     ? `${this.baseUrl}/Api/requetes/${id}` :
-      type === 'RECLAMATION' ? `${this.baseUrl}/Api/reclamations/${id}` :
-                               `${this.baseUrl}/Api/propositions/${id}`;
+    const segment =
+      type === 'REQUETE'     ? 'requetes' :
+      type === 'RECLAMATION' ? 'reclamations' : 'propositions';
 
-    // Construire le payload selon le type
-    const payload: any = { description: this.formModification.description };
-    if (type === 'REQUETE')     payload.typeRequete     = this.formModification.typeRequete;
-    if (type === 'PROPOSITION') payload.typeProposition = this.formModification.typeProposition;
-    if (type === 'RECLAMATION') {
-      payload.typeReclamation = this.formModification.typeReclamation;
-      payload.niveauUrgence   = this.formModification.niveauUrgence;
-    }
-
-    this.http.put<any>(endpoint, payload, { headers: this.getHeaders() }).subscribe({
-      next: (updated) => {
-        // Mettre à jour la demande dans la liste et dans le modal
-        Object.assign(this.selectedDemande, payload);
-        this.modeModification = false;
-        this.messageSoumission = '✅ Demande modifiée avec succès.';
+    this.http.delete(
+      `${this.baseUrl}/Api/${segment}/${id}/piece-jointe`,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: () => {
+        this.selectedDemande.cheminFichier = null;
+        this.selectedDemande.nomFichier    = null;
+        this.messageSoumission = '✅ Pièce jointe supprimée.';
         this.messageType = 'success';
       },
       error: () => {
-        this.messageSoumission = '❌ Erreur lors de la modification.';
+        this.messageSoumission = '❌ Erreur lors de la suppression de la pièce jointe.';
         this.messageType = 'error';
       }
     });
