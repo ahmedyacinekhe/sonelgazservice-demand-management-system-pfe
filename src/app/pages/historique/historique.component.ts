@@ -60,64 +60,87 @@ export class HistoriqueComponent implements OnInit {
   }
 
   chargerHistorique() {
-    this.loading = true;
-    this.erreur = '';
+  this.loading = true;
+  this.erreur = '';
 
-    forkJoin({
-      requetes:     this.requeteService.getMesDemandes(),
-      reclamations: this.reclamationService.getMesDemandes(),
-      propositions: this.propositionService.getMesDemandes()
-    }).subscribe({
-      next: ({ requetes, reclamations, propositions }) => {
-  const r  = (requetes     || []).map((d: any) => ({
-    ...d,
-    typeDemande: 'REQUETE',
-    cheminFichier: d.pieceJointe ? `uploads/${d.pieceJointe}` : null,
-    nomFichier:    d.pieceJointe || null
-  }));
-  const rc = (reclamations || []).map((d: any) => ({
-    ...d,
-    typeDemande: 'RECLAMATION',
-    cheminFichier: d.pieceJointe ? `uploads/${d.pieceJointe}` : null,
-    nomFichier:    d.pieceJointe || null
-  }));
-  const p  = (propositions || []).map((d: any) => ({
-    ...d,
-    typeDemande: 'PROPOSITION',
-    cheminFichier: d.pieceJointe ? `uploads/${d.pieceJointe}` : null,
-    nomFichier:    d.pieceJointe || null
-  }));
+  forkJoin({
+    requetes:     this.requeteService.getMesDemandes(),
+    reclamations: this.reclamationService.getMesDemandes(),
+    propositions: this.propositionService.getMesDemandes()
+  }).subscribe({
+    next: ({ requetes, reclamations, propositions }) => {
+      const r  = (requetes     || []).map((d: any) => ({
+        ...d,
+        typeDemande: 'REQUETE',
+        cheminFichier: d.pieceJointe ? `uploads/${d.pieceJointe}` : null,
+        nomFichier:    d.pieceJointe || null
+      }));
+      const rc = (reclamations || []).map((d: any) => ({
+        ...d,
+        typeDemande: 'RECLAMATION',
+        cheminFichier: d.pieceJointe ? `uploads/${d.pieceJointe}` : null,
+        nomFichier:    d.pieceJointe || null
+      }));
+      const p  = (propositions || []).map((d: any) => ({
+        ...d,
+        typeDemande: 'PROPOSITION',
+        cheminFichier: d.pieceJointe ? `uploads/${d.pieceJointe}` : null,
+        nomFichier:    d.pieceJointe || null
+      }));
 
-  this.toutesLesDemandes = [...r, ...rc, ...p].sort((a, b) => {
-    const da = new Date(a.dateDemande || a.dateCreation || 0).getTime();
-    const db = new Date(b.dateDemande || b.dateCreation || 0).getTime();
-    return db - da; // plus récent en premier
+      // Tri initial par ID décroissant (pas encore les statuts)
+      this.toutesLesDemandes = [...r, ...rc, ...p].sort((a, b) => {
+        const da = new Date(a.dateDemande || a.dateCreation || 0).getTime();
+        const db = new Date(b.dateDemande || b.dateCreation || 0).getTime();
+        if (da !== db) return db - da;
+        return (b.idDemande || 0) - (a.idDemande || 0);
+      });
+
+      this.chargerEtats(); // re-triera après avoir les statuts
+      this.loading = false;
+    },
+    error: () => {
+      this.erreur = 'Erreur lors du chargement de l\'historique.';
+      this.loading = false;
+    }
   });
+}
 
-  this.chargerEtats();
-  this.loading = false;
-},
-      error: () => {
-        this.erreur = 'Erreur lors du chargement de l\'historique.';
-        this.loading = false;
-      }
-    });
-  }
+ chargerEtats() {
+  const appels = this.toutesLesDemandes.map(demande => {
+    const id = demande.idDemande;
+    if (!id) return new Promise<void>(res => res());
 
-  chargerEtats() {
-    this.toutesLesDemandes.forEach(demande => {
-      const id = demande.idDemande;
-      if (!id) return;
-      const service =
-        demande.typeDemande === 'REQUETE'     ? this.requeteService :
-        demande.typeDemande === 'RECLAMATION' ? this.reclamationService :
-                                               this.propositionService;
+    const service =
+      demande.typeDemande === 'REQUETE'     ? this.requeteService :
+      demande.typeDemande === 'RECLAMATION' ? this.reclamationService :
+                                             this.propositionService;
+
+    return new Promise<void>(resolve => {
       service.getEtat(id).subscribe({
-        next: (etat: string) => { demande.statut = etat; },
-        error: () => { demande.statut = 'INCONNU'; }
+        next: (etat: string) => { demande.statut = etat; resolve(); },
+        error: () => { demande.statut = 'INCONNU'; resolve(); }
       });
     });
-  }
+  });
+
+  Promise.all(appels).then(() => {
+  this.toutesLesDemandes = [...this.toutesLesDemandes].sort((a, b) => {
+    // 1. Brouillons en premier
+    const aB = (a.statut || '').toUpperCase() === 'BROUILLON' ? 0 : 1;
+    const bB = (b.statut || '').toUpperCase() === 'BROUILLON' ? 0 : 1;
+    if (aB !== bB) return aB - bB;
+
+    // 2. Par date décroissante
+    const da = new Date(a.dateDemande || a.dateCreation || 0).getTime();
+    const db = new Date(b.dateDemande || b.dateCreation || 0).getTime();
+    if (da !== db) return db - da;
+
+    // 3. Même date → plus grand ID en premier
+    return (b.idDemande || 0) - (a.idDemande || 0);
+  });
+});
+}
 
   chargerDepartements() {
     if (this.departements.length > 0) return;
