@@ -3,6 +3,9 @@ package com.pfe.pfe.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,5 +47,13 @@ public class ClientController {
     public void deleteById(@PathVariable int id){
         clientService.deleteById(id);
     }
-    
+    @Autowired
+private com.pfe.pfe.repository.ClientRepository clientRepository;
+
+@GetMapping("/me")
+public ResponseEntity<?> getMe(@AuthenticationPrincipal UserDetails userDetails) {
+    Client client = clientRepository.findByEmailUtil(userDetails.getUsername()).orElse(null);
+    if (client == null) return ResponseEntity.notFound().build();
+    return ResponseEntity.ok(client);
+}
 }

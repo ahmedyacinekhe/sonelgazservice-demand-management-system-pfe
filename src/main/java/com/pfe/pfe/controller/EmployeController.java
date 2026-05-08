@@ -63,4 +63,21 @@ public class EmployeController {
     public void deleteById(@PathVariable int id) {
         employeService.deleteById(id);
     }
+    @GetMapping("/me")
+public ResponseEntity<?> getMe(@AuthenticationPrincipal UserDetails userDetails) {
+    Employe emp = employeRepository.findByEmailUtil(userDetails.getUsername()).orElse(null);
+    if (emp == null) return ResponseEntity.notFound().build();
+    return ResponseEntity.ok(emp);
+}
+
+@PutMapping("/me")
+public ResponseEntity<?> updateMe(@AuthenticationPrincipal UserDetails userDetails,
+                                   @RequestBody Employe employe) {
+    Employe emp = employeRepository.findByEmailUtil(userDetails.getUsername()).orElse(null);
+    if (emp == null) return ResponseEntity.notFound().build();
+    emp.setPrenomUtil(employe.getPrenomUtil());
+    emp.setNomUtil(employe.getNomUtil());
+    emp.setNumTel(employe.getNumTel());
+    return ResponseEntity.ok(employeService.save(emp));
+}
 }
