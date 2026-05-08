@@ -626,33 +626,75 @@
 </div>
 
       <!-- MON PROFIL -->
-      <div *ngIf="activeSection === 'profil'">
-        <div class="page-header">
-          <h4 class="page-title">Mon Profil</h4>
-          <p class="page-subtitle">Vos informations personnelles</p>
+<div *ngIf="activeSection === 'profil'">
+  <div class="page-header">
+    <h4 class="page-title">Mon Profil</h4>
+    <p class="page-subtitle">Vos informations personnelles</p>
+  </div>
+  <div class="profil-card">
+    <div class="profil-top">
+      <div class="profil-avatar-box">
+        <img src="assets/profile.png" alt="profil" (error)="onAvatarError($event)"/>
+      </div>
+      <div>
+        <h5 class="profil-full-name">{{ nomUtilisateur }}</h5>
+        <span class="profil-badge">{{ roleUtilisateur }}</span>
+      </div>
+    </div>
+    <div class="profil-divider"></div>
+
+    <!-- EMPLOYÉ / RESPONSABLE -->
+    <ng-container *ngIf="roleUtilisateur !== 'CLIENT'">
+      <h6 class="profil-section-title">Informations du compte</h6>
+      <div class="profil-infos">
+        <div class="profil-info-row"><span class="profil-info-label">📧 Email</span><span class="profil-info-value">{{ emailUtilisateur }}</span></div>
+        <div class="profil-info-row"><span class="profil-info-label">🔑 Rôle</span><span class="profil-info-value">{{ roleUtilisateur }}</span></div>
+        <div class="profil-info-row"><span class="profil-info-label">✅ Statut</span><span class="badge badge-green">Actif</span></div>
+        <div class="profil-info-row"><span class="profil-info-label">🪪 Matricule</span><span class="profil-info-value">{{ matricule || '—' }}</span></div>
+        <div class="profil-info-row"><span class="profil-info-label">📅 Date d'embauche</span><span class="profil-info-value">{{ dateEmbauche || '—' }}</span></div>
+        <div class="profil-info-row"><span class="profil-info-label">🏢 Département</span><span class="profil-info-value">{{ nomDepartement || '—' }}</span></div>
+      </div>
+      <div class="profil-divider"></div>
+      <h6 class="profil-section-title">Informations modifiables</h6>
+      <div class="profil-infos">
+        <div class="profil-info-row">
+          <span class="profil-info-label">👤 Prénom</span>
+          <span *ngIf="!editProfil" class="profil-info-value">{{ prenomUtilisateur || '—' }}</span>
+          <input *ngIf="editProfil" type="text" class="field-input-sm" [(ngModel)]="profilEdit.prenomUtil"/>
         </div>
-        <div class="profil-card">
-          <div class="profil-top">
-            <div class="profil-avatar-box">
-              <img src="assets/profile.png" alt="profil" (error)="onAvatarError($event)"/>
-            </div>
-            <div>
-              <h5 class="profil-full-name">{{ nomUtilisateur }}</h5>
-              <span class="profil-badge">{{ roleUtilisateur }}</span>
-            </div>
-          </div>
-          <div class="profil-divider"></div>
-          <div class="profil-infos">
-            <div class="profil-info-row"><span class="profil-info-label">👤 Prénom</span><span class="profil-info-value">{{ prenomUtilisateur || '—' }}</span></div>
-            <div class="profil-info-row"><span class="profil-info-label">👤 Nom</span><span class="profil-info-value">{{ nomFamilleUtilisateur || '—' }}</span></div>
-            <div class="profil-info-row"><span class="profil-info-label">📧 Email</span><span class="profil-info-value">{{ emailUtilisateur }}</span></div>
-            <div class="profil-info-row"><span class="profil-info-label">📱 Téléphone</span><span class="profil-info-value">{{ telUtilisateur || '—' }}</span></div>
-            <div class="profil-info-row"><span class="profil-info-label">🔑 Rôle</span><span class="profil-info-value">{{ roleUtilisateur }}</span></div>
-            <div class="profil-info-row"><span class="profil-info-label">✅ Statut</span><span class="badge badge-green">Actif</span></div>
-          </div>
+        <div class="profil-info-row">
+          <span class="profil-info-label">👤 Nom</span>
+          <span *ngIf="!editProfil" class="profil-info-value">{{ nomFamilleUtilisateur || '—' }}</span>
+          <input *ngIf="editProfil" type="text" class="field-input-sm" [(ngModel)]="profilEdit.nomUtil"/>
+        </div>
+        <div class="profil-info-row">
+          <span class="profil-info-label">📱 Téléphone</span>
+          <span *ngIf="!editProfil" class="profil-info-value">{{ telUtilisateur || '—' }}</span>
+          <input *ngIf="editProfil" type="text" class="field-input-sm" [(ngModel)]="profilEdit.numTel"/>
         </div>
       </div>
+      <div class="profil-actions" style="margin-top: 16px;">
+        <button *ngIf="!editProfil" class="btn-action" (click)="editProfil = true">✏️ Modifier</button>
+        <button *ngIf="editProfil" class="btn-action" (click)="sauvegarderProfil()">💾 Enregistrer</button>
+        <button *ngIf="editProfil" class="btn-table btn-gray" style="margin-left:8px;" (click)="editProfil = false">Annuler</button>
+      </div>
+    </ng-container>
 
+    <!-- CLIENT -->
+    <ng-container *ngIf="roleUtilisateur === 'CLIENT'">
+      <h6 class="profil-section-title">Informations du compte</h6>
+      <div class="profil-infos">
+        <div class="profil-info-row"><span class="profil-info-label">📧 Email</span><span class="profil-info-value">{{ emailUtilisateur }}</span></div>
+        <div class="profil-info-row"><span class="profil-info-label">🔑 Rôle</span><span class="profil-info-value">{{ roleUtilisateur }}</span></div>
+        <div class="profil-info-row"><span class="profil-info-label">✅ Statut</span><span class="badge badge-green">Actif</span></div>
+        <div class="profil-info-row"><span class="profil-info-label">🏠 Adresse</span><span class="profil-info-value">{{ profilExtra?.adresseClient || '—' }}</span></div>
+        <div class="profil-info-row"><span class="profil-info-label">📮 Code postal</span><span class="profil-info-value">{{ profilExtra?.codePostal || '—' }}</span></div>
+        <div class="profil-info-row"><span class="profil-info-label">👤 Type client</span><span class="profil-info-value">{{ profilExtra?.typeClient || '—' }}</span></div>
+      </div>
+    </ng-container>
+
+  </div>
+</div>
       <!-- PARAMÈTRES -->
       <div *ngIf="activeSection === 'parametres'">
         <div class="page-header">

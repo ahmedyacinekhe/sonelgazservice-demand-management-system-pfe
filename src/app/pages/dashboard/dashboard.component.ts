@@ -96,6 +96,11 @@ export class DashboardComponent implements OnInit {
   reponseTexte = '';
   reponseEnvoyee = false;
   reponseErreur = '';
+  editProfil = false;
+profilEdit = { prenomUtil: '', nomUtil: '', numTel: '' };
+matricule = '';
+dateEmbauche = '';
+nomDepartement = '';
 
   private baseUrl = 'http://localhost:8082';
 
@@ -301,6 +306,14 @@ export class DashboardComponent implements OnInit {
           'Utilisateur';
         const lr = this.authService.getRole();
         if (lr) this.roleUtilisateur = lr;
+        this.matricule      = raw.matricule   || '';
+this.dateEmbauche   = raw.dateEmbauche || '';
+this.nomDepartement = raw.departement?.nomDepartement || '';
+this.profilEdit = {
+  prenomUtil: this.prenomUtilisateur,
+  nomUtil: this.nomFamilleUtilisateur,
+  numTel: this.telUtilisateur
+};
         this.cdr.markForCheck();
       },
       error: () => {
@@ -725,6 +738,20 @@ export class DashboardComponent implements OnInit {
         .subscribe({ next: () => this.loadRoles(), error: () => {} });
     }
   }
+  sauvegarderProfil() {
+  this.http.put(`${this.baseUrl}/Api/employes/me`, this.profilEdit, { headers: this.getHeaders() })
+    .subscribe({
+      next: () => {
+        this.prenomUtilisateur     = this.profilEdit.prenomUtil;
+        this.nomFamilleUtilisateur = this.profilEdit.nomUtil;
+        this.telUtilisateur        = this.profilEdit.numTel;
+        this.nomUtilisateur        = `${this.profilEdit.prenomUtil} ${this.profilEdit.nomUtil}`.trim();
+        this.editProfil = false;
+        alert('Profil mis à jour !');
+      },
+      error: () => alert('Erreur lors de la mise à jour.')
+    });
+}
   telechargerFichier(nomFichier: string) {
   const token = localStorage.getItem('token');
   this.http.get(`${this.baseUrl}/Api/fichiers/download/${nomFichier}`, { 
