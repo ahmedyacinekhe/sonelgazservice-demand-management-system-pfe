@@ -524,46 +524,63 @@ export class DashboardComponent implements OnInit {
   }
 
   envoyerReponse() {
-    if (!this.nouveauStatut) { this.reponseErreur = 'Choisissez un statut.'; return; }
-    if (!this.reponseTexte.trim()) { this.reponseErreur = 'La réponse est obligatoire.'; return; }
+  if (!this.nouveauStatut) { this.reponseErreur = 'Choisissez un statut.'; return; }
+  if (!this.reponseTexte.trim()) { this.reponseErreur = 'La réponse est obligatoire.'; return; }
 
-    const id = this.demandeEnCours.idDemande;
-    const type = this.demandeEnCours._type;
+  const id = this.demandeEnCours.idDemande;
+  const type = this.demandeEnCours._type;
 
-    const statutMap: any = { 'EN_COURS': 3, 'TRAITEE': 4, 'CLOTUREE': 5, 'ANNULEE': 6 };
-    const idEtat = statutMap[this.nouveauStatut] || 3;
+  // IDs numériques comme dans la DB
+  const statutMap: any = { 
+    'EN_COURS': 3, 
+    'TRAITEE':  4, 
+    'CLOTUREE': 5, 
+    'ANNULEE':  6 
+  };
+  const idEtat = statutMap[this.nouveauStatut];
 
-    const urlStatut = type === 'REQUETE'
-      ? `/Api/requetes/${id}/statut/${idEtat}`
-      : type === 'RECLAMATION'
-      ? `/Api/reclamations/${id}/statut/${idEtat}`
-      : `/Api/propositions/${id}/statut/${idEtat}`;
+  const urlStatut = type === 'REQUETE'
+    ? `/Api/requetes/${id}/statut/${idEtat}`
+    : type === 'RECLAMATION'
+    ? `/Api/reclamations/${id}/statut/${idEtat}`
+    : `/Api/propositions/${id}/statut/${idEtat}`;
 
-    this.http.put(`${this.baseUrl}${urlStatut}`, {}, { headers: this.getHeaders() })
-      .subscribe({
-        next: () => {
-          const reponse = {
-            contenuReponse: this.reponseTexte,
-            demande: { idDemande: id }
-          };
-          this.http.post(`${this.baseUrl}/Api/reponses`, reponse, { headers: this.getHeaders() })
-            .subscribe({
-              next: () => {
-                this.reponseEnvoyee = true;
-                this.demandeEnCours.statut = this.nouveauStatut;
-                setTimeout(() => {
-                  this.demandeEnCours = null;
-                  if (type === 'REQUETE') this.ouvrirListeRequetes();
-                  else if (type === 'RECLAMATION') this.ouvrirListeReclamations();
-                  else this.ouvrirListePropositions();
-                }, 1500);
-              },
-              error: () => { this.reponseErreur = 'Erreur lors de l\'envoi de la réponse.'; }
-            });
-        },
-        error: () => { this.reponseErreur = 'Erreur lors du changement de statut.'; }
-      });
-  }
+  this.http.put(`${this.baseUrl}${urlStatut}`, {}, { headers: this.getHeaders() })
+    .subscribe({
+      next: () => {
+        const reponse = {
+          contenuReponse: this.reponseTexte,
+          demande: { idDemande: id }
+        };
+        this.http.post(`${this.baseUrl}/Api/reponses`, reponse, { headers: this.getHeaders() })
+          .subscribe({
+            next: () => {
+              this.reponseEnvoyee = true;
+              this.demandeEnCours.statut = this.nouveauStatut;
+
+              // Mettre à jour dans la liste locale
+              if (type === 'REQUETE') {
+                const idx = this.requetes.findIndex(r => r.idDemande === id);
+                if (idx !== -1) this.requetes[idx].statut = this.nouveauStatut;
+              } else if (type === 'RECLAMATION') {
+                const idx = this.reclamations.findIndex(r => r.idDemande === id);
+                if (idx !== -1) this.reclamations[idx].statut = this.nouveauStatut;
+              } else {
+                const idx = this.propositions.findIndex(p => p.idDemande === id);
+                if (idx !== -1) this.propositions[idx].statut = this.nouveauStatut;
+              }
+
+              setTimeout(() => { this.demandeEnCours = null; }, 1500);
+            },
+            error: () => { this.reponseErreur = 'Erreur lors de l\'envoi de la réponse.'; }
+          });
+      },
+      error: (err) => {
+        console.error('Erreur statut:', err.status, err.error);
+        this.reponseErreur = 'Erreur lors du changement de statut.';
+      }
+    });
+}
 
   // ===== ÉDITION DEMANDES =====
 
