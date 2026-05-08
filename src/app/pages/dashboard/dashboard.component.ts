@@ -122,7 +122,7 @@ export class DashboardComponent implements OnInit {
 
   normalizeActiveSection(): void {
     const s = this.activeSection;
-    if (!this.showEmployeMenus && (s === 'demandes' || s === 'historique')) {
+    if (!this.showEmployeMenus && !this.canTraiterDemandes && (s === 'demandes' || s === 'historique')) {
       this.activeSection = 'home';
     }
     if (this.isAdmin && s === 'gestion-demandes') {
@@ -149,7 +149,7 @@ export class DashboardComponent implements OnInit {
     this.isAdmin = this.authService.isAdminRole();
     this.showEmployeMenus = !this.isAdmin;
     this.canTraiterDemandes =
-      this.showEmployeMenus &&
+      !this.isAdmin &&
       (this.authService.hasPermission('TRAITER_DEMANDE') ||
         this.authService.hasPermission('TRAITER_DEMANDES'));
     this.canGererUtilisateurs =
@@ -708,4 +708,22 @@ export class DashboardComponent implements OnInit {
         .subscribe({ next: () => this.loadRoles(), error: () => {} });
     }
   }
+  telechargerFichier(nomFichier: string) {
+  const token = localStorage.getItem('token');
+  this.http.get(`${this.baseUrl}/Api/fichiers/download/${nomFichier}`, { 
+    headers: new HttpHeaders({ Authorization: `Bearer ${token}` }),
+    responseType: 'blob'
+  }).subscribe({
+    next: (blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.download = nomFichier;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    },
+    error: () => alert('Impossible de charger le fichier.')
+  });
+}
 }

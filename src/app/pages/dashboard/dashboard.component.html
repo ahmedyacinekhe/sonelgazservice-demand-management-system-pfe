@@ -63,14 +63,14 @@
           <span>Accueil</span>
         </button>
 
-        <button class="sidebar-item" *ngIf="showEmployeMenus"
+        <button class="sidebar-item" *ngIf="showEmployeMenus || canTraiterDemandes"
                 [class.active]="activeSection === 'demandes'"
                 (click)="activeSection = 'demandes'; demandeTypeSelectionne = ''; closeSidebarMobile()">
           <img src="assets/demandes.svg" alt="" class="sidebar-icon"/>
           <span>Ajouter demande</span>
         </button>
 
-        <button class="sidebar-item" *ngIf="showEmployeMenus"
+        <button class="sidebar-item" *ngIf="showEmployeMenus || canTraiterDemandes"
                 [class.active]="activeSection === 'historique'"
                 (click)="activeSection = 'historique'; closeSidebarMobile()">
           <img src="assets/historique.webp" alt="" class="sidebar-icon"/>
@@ -170,7 +170,7 @@
       </div>
 
       <!-- AJOUTER DEMANDE -->
-      <div *ngIf="activeSection === 'demandes' && showEmployeMenus">
+      <div *ngIf="activeSection === 'demandes' && (showEmployeMenus || canTraiterDemandes)">
         <div class="page-header">
           <h4 class="page-title">📋 Ajouter une demande</h4>
           <p class="page-subtitle">Choisissez le type de demande à soumettre</p>
@@ -326,7 +326,7 @@
       </div>
 
       <!-- HISTORIQUE -->
-      <div *ngIf="activeSection === 'historique' && showEmployeMenus">
+      <div *ngIf="activeSection === 'historique'">
         <app-historique></app-historique>
       </div>
 
@@ -371,15 +371,14 @@
   <div class="table-wrapper">
     <table class="data-table">
       <thead>
-        <tr><th>ID</th><th>Utilisateur</th><th>Type util.</th><th>Description</th><th>Type</th><th>Date</th><th>Statut</th><th>Actions</th></tr>
+        <tr><th>ID</th><th>Utilisateur</th><th>Type</th><th>Date</th><th>Statut</th><th>Actions</th></tr>
       </thead>
       <tbody>
         <tr *ngFor="let p of demandesFiltrees(propositions)">
           <td>{{ p.idDemande }}</td>
-          <td>{{ getNomUtilisateur(p) }}</td>
-          <td><span class="badge badge-blue">{{ getTypeUtilisateur(p) }}</span></td>
-          <td>{{ p.description }}</td>
-          <td>{{ p.typeProposition }}</td>
+          
+        <td>{{ getNomUtilisateur(p) }}</td>
+<td>{{ p.typeProposition }}</td>
           <td>{{ p.dateDemande }}</td>
           <td><span class="badge badge-yellow">{{ p.statut || 'EN_ATTENTE' }}</span></td>
           <td class="actions-cell">
@@ -388,7 +387,7 @@
           </td>
         </tr>
         <tr *ngIf="demandesFiltrees(propositions).length === 0">
-          <td colspan="8" class="empty-row">Aucune proposition</td>
+          <td colspan="6" class="empty-row">Aucune proposition</td>
         </tr>
       </tbody>
     </table>
@@ -399,14 +398,14 @@
     <div class="modal-card" (click)="$event.stopPropagation()">
       <h3 class="modal-title">Détails de la proposition</h3>
       <div class="modal-body-content">
-        <p><strong>ID :</strong> {{ selectedProposition.idDemande }}</p>
-        <p><strong>Utilisateur :</strong> {{ getNomUtilisateur(selectedProposition) }}</p>
-        <p><strong>Type utilisateur :</strong> {{ getTypeUtilisateur(selectedProposition) }}</p>
-        <p><strong>Description :</strong> {{ selectedProposition.description }}</p>
-        <p><strong>Type :</strong> {{ selectedProposition.typeProposition }}</p>
-        <p><strong>Date :</strong> {{ selectedProposition.dateDemande }}</p>
-        <p><strong>Statut :</strong> {{ selectedProposition.statut || 'EN_ATTENTE' }}</p>
-      </div>
+  <p><strong>Description :</strong> {{ selectedProposition.description }}</p>
+  <div *ngIf="selectedProposition.pieceJointe; else pasFichierP">
+    <strong>📎 Pièce jointe :</strong>
+    <a [href]="'http://localhost:8082/Api/fichiers/view/' + selectedProposition.pieceJointe" target="_blank" class="btn-table btn-info">👁️ Voir</a>
+<a [href]="'http://localhost:8082/Api/fichiers/download/' + selectedProposition.pieceJointe" class="btn-table btn-warn">⬇️ Télécharger</a>
+  </div>
+  <ng-template #pasFichierP><p>📎 Aucune pièce jointe</p></ng-template>
+</div>
       <div class="modal-footer-btns">
         <button class="btn-table btn-gray" (click)="selectedProposition = null">Fermer</button>
       </div>
@@ -461,15 +460,13 @@
   <div class="table-wrapper">
     <table class="data-table">
       <thead>
-        <tr><th>ID</th><th>Utilisateur</th><th>Type util.</th><th>Description</th><th>Type</th><th>Date</th><th>Statut</th><th>Actions</th></tr>
+      <tr><th>ID</th><th>Utilisateur</th><th>Type</th><th>Date</th><th>Statut</th><th>Actions</th></tr>
       </thead>
       <tbody>
         <tr *ngFor="let r of demandesFiltrees(requetes)">
           <td>{{ r.idDemande }}</td>
-          <td>{{ getNomUtilisateur(r) }}</td>
-          <td><span class="badge badge-blue">{{ getTypeUtilisateur(r) }}</span></td>
-          <td>{{ r.description }}</td>
-          <td>{{ r.typeRequete }}</td>
+         <td>{{ getNomUtilisateur(r) }}</td>
+<td>{{ r.typeRequete }}</td>
           <td>{{ r.dateDemande }}</td>
           <td><span class="badge badge-yellow">{{ r.statut || 'EN_ATTENTE' }}</span></td>
           <td class="actions-cell">
@@ -478,7 +475,7 @@
           </td>
         </tr>
         <tr *ngIf="demandesFiltrees(requetes).length === 0">
-          <td colspan="8" class="empty-row">Aucune requête</td>
+          <td colspan="6" class="empty-row">Aucune requête</td>
         </tr>
       </tbody>
     </table>
@@ -489,14 +486,14 @@
     <div class="modal-card" (click)="$event.stopPropagation()">
       <h3 class="modal-title">Détails de la requête</h3>
       <div class="modal-body-content">
-        <p><strong>ID :</strong> {{ selectedRequete.idDemande }}</p>
-        <p><strong>Utilisateur :</strong> {{ getNomUtilisateur(selectedRequete) }}</p>
-        <p><strong>Type utilisateur :</strong> {{ getTypeUtilisateur(selectedRequete) }}</p>
-        <p><strong>Description :</strong> {{ selectedRequete.description }}</p>
-        <p><strong>Type :</strong> {{ selectedRequete.typeRequete }}</p>
-        <p><strong>Date :</strong> {{ selectedRequete.dateDemande }}</p>
-        <p><strong>Statut :</strong> {{ selectedRequete.statut || 'EN_ATTENTE' }}</p>
-      </div>
+  <p><strong>Description :</strong> {{ selectedRequete.description }}</p>
+  <div *ngIf="selectedRequete.pieceJointe; else pasFichierR">
+    <strong>📎 Pièce jointe :</strong>
+    <a [href]="'http://localhost:8082/Api/fichiers/view/' + selectedRequete.pieceJointe" target="_blank" class="btn-table btn-info">👁️ Voir</a>
+<a [href]="'http://localhost:8082/Api/fichiers/download/' + selectedRequete.pieceJointe" class="btn-table btn-warn">⬇️ Télécharger</a>
+  </div>
+  <ng-template #pasFichierR><p>📎 Aucune pièce jointe</p></ng-template>
+</div>
       <div class="modal-footer-btns">
         <button class="btn-table btn-gray" (click)="selectedRequete = null">Fermer</button>
       </div>
@@ -550,15 +547,13 @@
   <div class="table-wrapper">
     <table class="data-table">
       <thead>
-        <tr><th>ID</th><th>Utilisateur</th><th>Type util.</th><th>Description</th><th>Type</th><th>Urgence</th><th>Date</th><th>Statut</th><th>Actions</th></tr>
+       <tr><th>ID</th><th>Utilisateur</th><th>Type</th><th>Urgence</th><th>Date</th><th>Statut</th><th>Actions</th></tr>
       </thead>
       <tbody>
         <tr *ngFor="let r of demandesFiltrees(reclamations)">
           <td>{{ r.idDemande }}</td>
           <td>{{ getNomUtilisateur(r) }}</td>
-          <td><span class="badge badge-blue">{{ getTypeUtilisateur(r) }}</span></td>
-          <td>{{ r.description }}</td>
-          <td>{{ r.typeReclamation }}</td>
+<td>{{ r.typeReclamation }}</td>
           <td>
             <span class="badge"
               [ngClass]="{'badge-red': r.niveauUrgence==='URGENT','badge-yellow': r.niveauUrgence==='MOYEN','badge-green': r.niveauUrgence==='FAIBLE'}">
@@ -573,7 +568,7 @@
           </td>
         </tr>
         <tr *ngIf="demandesFiltrees(reclamations).length === 0">
-          <td colspan="9" class="empty-row">Aucune réclamation</td>
+          <td colspan="7" class="empty-row">Aucune réclamation</td>
         </tr>
       </tbody>
     </table>
@@ -584,15 +579,14 @@
     <div class="modal-card" (click)="$event.stopPropagation()">
       <h3 class="modal-title">Détails de la réclamation</h3>
       <div class="modal-body-content">
-        <p><strong>ID :</strong> {{ selectedReclamation.idDemande }}</p>
-        <p><strong>Utilisateur :</strong> {{ getNomUtilisateur(selectedReclamation) }}</p>
-        <p><strong>Type utilisateur :</strong> {{ getTypeUtilisateur(selectedReclamation) }}</p>
-        <p><strong>Description :</strong> {{ selectedReclamation.description }}</p>
-        <p><strong>Type :</strong> {{ selectedReclamation.typeReclamation }}</p>
-        <p><strong>Urgence :</strong> {{ selectedReclamation.niveauUrgence }}</p>
-        <p><strong>Date :</strong> {{ selectedReclamation.dateDemande }}</p>
-        <p><strong>Statut :</strong> {{ selectedReclamation.statut || 'EN_ATTENTE' }}</p>
-      </div>
+  <p><strong>Description :</strong> {{ selectedReclamation.description }}</p>
+  <div *ngIf="selectedReclamation.pieceJointe; else pasFichierRec">
+    <strong>📎 Pièce jointe :</strong>
+    <a [href]="'http://localhost:8082/Api/fichiers/view/' + selectedReclamation.pieceJointe" target="_blank" class="btn-table btn-info">👁️ Voir</a>
+<a [href]="'http://localhost:8082/Api/fichiers/download/' + selectedReclamation.pieceJointe" class="btn-table btn-warn">⬇️ Télécharger</a>
+  </div>
+  <ng-template #pasFichierRec><p>📎 Aucune pièce jointe</p></ng-template>
+</div>
       <div class="modal-footer-btns">
         <button class="btn-table btn-gray" (click)="selectedReclamation = null">Fermer</button>
       </div>

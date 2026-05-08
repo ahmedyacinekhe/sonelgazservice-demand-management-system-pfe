@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Router } from '@angular/router';                         // ← AJOUT
 import { RequeteService } from '../../core/services/requete.service';
 import { ReclamationService } from '../../core/services/reclamation.service';
 import { PropositionService } from '../../core/services/proposition.service';
@@ -22,26 +23,28 @@ export class HistoriqueComponent implements OnInit {
   erreur = '';
   toutesLesDemandes: any[] = [];
 
-  // Messages soumission
   messageSoumission: string = '';
   messageType: 'success' | 'info' | 'error' = 'info';
 
-  // Réponse du responsable
   reponseDemande: any = null;
   reponseLoading = false;
+
+  // ── Mode modification inline ──────────────────────────────
+  modeModification = false;
+  formModification: any = {};
+  // ─────────────────────────────────────────────────────────
 
   private baseUrl = 'http://localhost:8082';
 
   constructor(
     private http: HttpClient,
+    private router: Router,                                       // ← AJOUT
     private requeteService: RequeteService,
     private reclamationService: ReclamationService,
     private propositionService: PropositionService
   ) {}
 
-  ngOnInit() {
-    this.chargerHistorique();
-  }
+  ngOnInit() { this.chargerHistorique(); }
 
   private getHeaders(): HttpHeaders {
     const token = localStorage.getItem('token');
@@ -58,6 +61,9 @@ export class HistoriqueComponent implements OnInit {
       propositions: this.propositionService.getMesDemandes()
     }).subscribe({
       next: ({ requetes, reclamations, propositions }) => {
+  console.log('requetes count:', requetes?.length);
+  console.log('reclamations count:', reclamations?.length);
+  console.log('propositions count:', propositions?.length);
         const r  = (requetes     || []).map((d: any) => ({ ...d, typeDemande: 'REQUETE' }));
         const rc = (reclamations || []).map((d: any) => ({ ...d, typeDemande: 'RECLAMATION' }));
         const p  = (propositions || []).map((d: any) => ({ ...d, typeDemande: 'PROPOSITION' }));
@@ -76,18 +82,17 @@ export class HistoriqueComponent implements OnInit {
         this.loading = false;
       }
     });
+    
   }
 
   chargerEtats() {
     this.toutesLesDemandes.forEach(demande => {
       const id = demande.idDemande;
       if (!id) return;
-
       const service =
         demande.typeDemande === 'REQUETE'     ? this.requeteService :
         demande.typeDemande === 'RECLAMATION' ? this.reclamationService :
                                                this.propositionService;
-
       service.getEtat(id).subscribe({
         next: (etat: string) => { demande.statut = etat; },
         error: () => { demande.statut = 'INCONNU'; }
@@ -100,23 +105,16 @@ export class HistoriqueComponent implements OnInit {
   chargerReponse(demande: any) {
     const id = demande.idDemande;
     if (!id) return;
-
     this.reponseLoading = true;
     this.reponseDemande = null;
 
     this.http.get<any[]>(`${this.baseUrl}/Api/reponses/demande/${id}`, { headers: this.getHeaders() })
       .subscribe({
         next: (reponses) => {
-          // On prend la dernière réponse si plusieurs existent
-          this.reponseDemande = reponses && reponses.length > 0
-            ? reponses[reponses.length - 1]
-            : null;
+          this.reponseDemande = reponses?.length ? reponses[reponses.length - 1] : null;
           this.reponseLoading = false;
         },
-        error: () => {
-          this.reponseDemande = null;
-          this.reponseLoading = false;
-        }
+        error: () => { this.reponseDemande = null; this.reponseLoading = false; }
       });
   }
 
@@ -127,22 +125,17 @@ export class HistoriqueComponent implements OnInit {
     return this.toutesLesDemandes.filter(d => d.typeDemande === this.activeTab);
   }
 
-  // ===== STATUT =====
+  // ===== STATUT / TYPE =====
 
   getStatutClass(statut: string): string {
     switch ((statut || '').toUpperCase()) {
       case 'BROUILLON':  return 'badge-gray';
       case 'EN_ATTENTE': return 'badge-orange';
       case 'EN_COURS':   return 'badge-blue';
-      case 'TRAITE':
-      case 'TRAITEE':
-      case 'ACCEPTE':
-      case 'APPROUVE':   return 'badge-green';
-      case 'REJETE':
-      case 'REFUSE':     return 'badge-red';
-      case 'CLOTUREE':   return 'badge-green';
-      case 'ANNULEE':    return 'badge-red';
-      default:           return 'badge-gray';
+      case 'TRAITE': case 'TRAITEE': case 'ACCEPTE':
+      case 'APPROUVE': case 'CLOTUREE': return 'badge-green';
+      case 'REJETE': case 'REFUSE': case 'ANNULEE': return 'badge-red';
+      default: return 'badge-gray';
     }
   }
 
@@ -151,19 +144,16 @@ export class HistoriqueComponent implements OnInit {
       case 'BROUILLON':  return 'Brouillon';
       case 'EN_ATTENTE': return 'En attente';
       case 'EN_COURS':   return 'En cours';
-      case 'TRAITE':
-      case 'TRAITEE':    return 'Traité';
+      case 'TRAITE': case 'TRAITEE': return 'Traité';
       case 'ACCEPTE':    return 'Accepté';
       case 'APPROUVE':   return 'Approuvé';
       case 'REJETE':     return 'Rejeté';
       case 'REFUSE':     return 'Refusé';
       case 'CLOTUREE':   return 'Clôturée';
       case 'ANNULEE':    return 'Annulée';
-      default:           return statut || '—';
+      default: return statut || '—';
     }
   }
-
-  // ===== TYPE =====
 
   getTypeIcon(type: string): string {
     switch (type) {
@@ -183,14 +173,10 @@ export class HistoriqueComponent implements OnInit {
     }
   }
 
-  // ===== HELPERS =====
-
-  getDemandeId(d: any): number {
-    return d.idDemande || d.id || 0;
-  }
+  getDemandeId(d: any): number { return d.idDemande || d.id || 0; }
 
   estBrouillon(demande: any): boolean {
-    return (demande.statut || '').toUpperCase() === 'BROUILLON';
+    return (demande?.statut || '').toUpperCase() === 'BROUILLON';
   }
 
   countType(type: string): number {
@@ -203,6 +189,7 @@ export class HistoriqueComponent implements OnInit {
     this.selectedDemande = demande;
     this.messageSoumission = '';
     this.reponseDemande = null;
+    this.modeModification = false;         // reset le mode modif
     this.chargerReponse(demande);
   }
 
@@ -211,12 +198,67 @@ export class HistoriqueComponent implements OnInit {
     this.messageSoumission = '';
     this.reponseDemande = null;
     this.reponseLoading = false;
+    this.modeModification = false;
+  }
+
+  // ===== MODIFICATION =====
+
+  ouvrirModification() {
+    // Pré-remplir le formulaire avec les valeurs actuelles
+    this.formModification = {
+      description:      this.selectedDemande.description || '',
+      typeRequete:      this.selectedDemande.typeRequete || '',
+      typeProposition:  this.selectedDemande.typeProposition || '',
+      typeReclamation:  this.selectedDemande.typeReclamation || '',
+      niveauUrgence:    this.selectedDemande.niveauUrgence || ''
+    };
+    this.modeModification = true;
+    this.messageSoumission = '';
+  }
+
+  annulerModification() {
+    this.modeModification = false;
+    this.messageSoumission = '';
+  }
+
+  sauvegarderModification() {
+    const id = this.getDemandeId(this.selectedDemande);
+    if (!id) return;
+
+    const type = this.selectedDemande.typeDemande;
+    const endpoint =
+      type === 'REQUETE'     ? `${this.baseUrl}/Api/requetes/${id}` :
+      type === 'RECLAMATION' ? `${this.baseUrl}/Api/reclamations/${id}` :
+                               `${this.baseUrl}/Api/propositions/${id}`;
+
+    // Construire le payload selon le type
+    const payload: any = { description: this.formModification.description };
+    if (type === 'REQUETE')     payload.typeRequete     = this.formModification.typeRequete;
+    if (type === 'PROPOSITION') payload.typeProposition = this.formModification.typeProposition;
+    if (type === 'RECLAMATION') {
+      payload.typeReclamation = this.formModification.typeReclamation;
+      payload.niveauUrgence   = this.formModification.niveauUrgence;
+    }
+
+    this.http.put<any>(endpoint, payload, { headers: this.getHeaders() }).subscribe({
+      next: (updated) => {
+        // Mettre à jour la demande dans la liste et dans le modal
+        Object.assign(this.selectedDemande, payload);
+        this.modeModification = false;
+        this.messageSoumission = '✅ Demande modifiée avec succès.';
+        this.messageType = 'success';
+      },
+      error: () => {
+        this.messageSoumission = '❌ Erreur lors de la modification.';
+        this.messageType = 'error';
+      }
+    });
   }
 
   // ===== SOUMISSION =====
 
   soumettreBrouillon(demande: any) {
-    this.messageSoumission = '✅ Votre demande est soumise en tant que brouillon. Vous pouvez la modifier quand vous voulez.';
+    this.messageSoumission = '✅ Votre demande est sauvegardée en brouillon.';
     this.messageType = 'success';
   }
 
@@ -232,7 +274,7 @@ export class HistoriqueComponent implements OnInit {
     service.confirmerSoumission(id).subscribe({
       next: () => {
         demande.statut = 'EN_ATTENTE';
-        this.messageSoumission = '🔒 Votre demande a été confirmée. Vous ne pouvez plus la modifier.';
+        this.messageSoumission = '🔒 Votre demande a été confirmée.';
         this.messageType = 'info';
       },
       error: () => {
@@ -246,10 +288,7 @@ export class HistoriqueComponent implements OnInit {
 
   supprimer(demande: any) {
     const id = this.getDemandeId(demande);
-    if (!id || id === 0) {
-      alert('ID introuvable, impossible de supprimer.');
-      return;
-    }
+    if (!id) { alert('ID introuvable.'); return; }
     if (!confirm('Supprimer cette demande ?')) return;
 
     const obs =
@@ -261,10 +300,7 @@ export class HistoriqueComponent implements OnInit {
         this.toutesLesDemandes = this.toutesLesDemandes.filter(d => d !== demande);
         if (this.selectedDemande === demande) this.selectedDemande = null;
       },
-      error: (err) => {
-        console.error('Erreur suppression:', err);
-        alert('Erreur lors de la suppression.');
-      }
+      error: () => alert('Erreur lors de la suppression.')
     });
   }
 }
