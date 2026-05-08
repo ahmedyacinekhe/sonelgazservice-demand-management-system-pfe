@@ -8,7 +8,6 @@ com\pfe\pfe\controller\UtilisateurController.class
 com\pfe\pfe\repository\ClientRepository.class
 com\pfe\pfe\controller\DirectionCentraleController.class
 com\pfe\pfe\service\DemandeService.class
-com\pfe\pfe\controller\ReponseController$RequeteController.class
 com\pfe\pfe\service\DirectionCentraleService.class
 com\pfe\pfe\service\DepartementMetierService.class
 com\pfe\pfe\service\RoleUtilisateurService.class
@@ -24,7 +23,6 @@ com\pfe\pfe\entity\RoleUtilisateurId.class
 com\pfe\pfe\controller\RequeteController.class
 com\pfe\pfe\entity\DepartementMetier.class
 com\pfe\pfe\repository\UtilisateurRepository.class
-com\pfe\pfe\security\SecurityConfig.class
 com\pfe\pfe\service\DemandeEtatDetailService.class
 com\pfe\pfe\dto\LoginRequest.class
 com\pfe\pfe\service\RoleService.class

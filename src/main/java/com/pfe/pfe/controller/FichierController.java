@@ -37,16 +37,35 @@ public class FichierController {
     }
 
     @GetMapping("/download/{nomFichier}")
-    public ResponseEntity<org.springframework.core.io.Resource> downloadFichier(
-            @PathVariable String nomFichier) throws IOException {
-        Path chemin = Paths.get(uploadDir + nomFichier);
-        org.springframework.core.io.Resource resource =
-            new org.springframework.core.io.UrlResource(chemin.toUri());
+public ResponseEntity<org.springframework.core.io.Resource> downloadFichier(
+        @PathVariable String nomFichier) throws IOException {
+    String nomDecode = java.net.URLDecoder.decode(nomFichier, java.nio.charset.StandardCharsets.UTF_8);
+    Path chemin = Paths.get(uploadDir + nomDecode);
+    org.springframework.core.io.Resource resource =
+        new org.springframework.core.io.UrlResource(chemin.toUri());
 
-        if (!resource.exists()) return ResponseEntity.notFound().build();
+    if (!resource.exists()) return ResponseEntity.notFound().build();
 
-        return ResponseEntity.ok()
-            .header("Content-Disposition", "attachment; filename=\"" + nomFichier + "\"")
-            .body(resource);
-    }
+    return ResponseEntity.ok()
+        .header("Content-Disposition", "attachment; filename=\"" + nomDecode + "\"")
+        .body(resource);
+}
+    @GetMapping("/view/{nomFichier}")
+public ResponseEntity<org.springframework.core.io.Resource> viewFichier(
+        @PathVariable String nomFichier) throws IOException {
+    Path chemin = Paths.get(uploadDir + nomFichier);
+    org.springframework.core.io.Resource resource =
+        new org.springframework.core.io.UrlResource(chemin.toUri());
+
+    if (!resource.exists()) return ResponseEntity.notFound().build();
+
+    // Déterminer le type MIME
+    String contentType = Files.probeContentType(chemin);
+    if (contentType == null) contentType = "application/octet-stream";
+
+    return ResponseEntity.ok()
+        .header("Content-Type", contentType)
+        .header("Content-Disposition", "inline; filename=\"" + nomFichier + "\"")
+        .body(resource);
+}
 }
