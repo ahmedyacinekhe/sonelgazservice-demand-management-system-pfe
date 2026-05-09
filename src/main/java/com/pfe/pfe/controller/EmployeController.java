@@ -80,4 +80,22 @@ public ResponseEntity<?> updateMe(@AuthenticationPrincipal UserDetails userDetai
     emp.setNumTel(employe.getNumTel());
     return ResponseEntity.ok(employeService.save(emp));
 }
+@PutMapping("/me/mot-de-passe")
+public ResponseEntity<?> changerMotDePasse(
+        @AuthenticationPrincipal UserDetails userDetails,
+        @RequestBody java.util.Map<String, String> body) {
+    Employe emp = employeRepository.findByEmailUtil(userDetails.getUsername()).orElse(null);
+    if (emp == null) return ResponseEntity.notFound().build();
+
+    org.springframework.security.crypto.password.PasswordEncoder passwordEncoder =
+        new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+
+    if (!passwordEncoder.matches(body.get("ancien"), emp.getMotDePasse())) {
+        return ResponseEntity.status(400).body("Ancien mot de passe incorrect");
+    }
+
+    emp.setMotDePasse(passwordEncoder.encode(body.get("nouveau")));
+    employeService.save(emp);
+    return ResponseEntity.ok("Mot de passe modifié");
+}
 }
