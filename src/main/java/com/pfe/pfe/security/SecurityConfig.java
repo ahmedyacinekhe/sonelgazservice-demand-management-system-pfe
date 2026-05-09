@@ -46,16 +46,18 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
         .requestMatchers(
-                "/auth/login",
-                "/auth/register/client",
-                "/auth/register/employe",
-                "/Api/departements",
-                "/Api/departements/**",
-                "/Api/metier",
-                "/Api/metier/**",
-                "/Api/fichiers/download/**",
-                "/Api/fichiers/view/**"
-        ).permitAll()
+        "/auth/login",
+        "/auth/register/client",
+        "/auth/register/employe",
+        "/auth/google",
+        "/auth/google/complete",
+        "/Api/departements",
+        "/Api/departements/**",
+        "/Api/metier",
+        "/Api/metier/**",
+        "/Api/fichiers/download/**",
+        "/Api/fichiers/view/**"
+).permitAll()
         .anyRequest().authenticated()
 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

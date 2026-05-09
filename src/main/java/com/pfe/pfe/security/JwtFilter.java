@@ -27,6 +27,12 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+        if (path.startsWith("/auth/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String header = request.getHeader("Authorization");
         String token = null;
         String email = null;
@@ -49,9 +55,9 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
-    System.out.println("❌ JWT ERROR sur " + request.getRequestURI() 
-        + " → " + e.getClass().getSimpleName() + ": " + e.getMessage());
-}
+            System.out.println("❌ JWT ERROR sur " + request.getRequestURI()
+                + " → " + e.getClass().getSimpleName() + ": " + e.getMessage());
+        }
         filterChain.doFilter(request, response);
     }
 }

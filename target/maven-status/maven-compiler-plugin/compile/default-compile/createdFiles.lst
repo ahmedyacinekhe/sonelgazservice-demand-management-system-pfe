@@ -23,6 +23,7 @@ com\pfe\pfe\entity\RoleUtilisateurId.class
 com\pfe\pfe\controller\RequeteController.class
 com\pfe\pfe\entity\DepartementMetier.class
 com\pfe\pfe\repository\UtilisateurRepository.class
+com\pfe\pfe\security\SecurityConfig.class
 com\pfe\pfe\service\DemandeEtatDetailService.class
 com\pfe\pfe\dto\LoginRequest.class
 com\pfe\pfe\service\RoleService.class
