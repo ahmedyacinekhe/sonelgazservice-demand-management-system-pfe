@@ -694,5 +694,8 @@ affecterRole() {
         .subscribe({ next: () => this.loadRoles(), error: () => {} });
     }
   }
-  
+  deconnecter() {
+  localStorage.clear();
+  window.location.href = '/login';
+}
 }

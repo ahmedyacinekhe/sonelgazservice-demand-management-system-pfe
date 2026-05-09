@@ -8,11 +8,11 @@ import { ReclamationService } from '../../core/services/reclamation.service';
 import { PropositionService } from '../../core/services/proposition.service';
 import { AuthService } from '../../core/services/auth.service';
 import { HistoriqueComponent } from '../historique/historique.component';
-
+import { SocialAuthService, SocialLoginModule } from '@abacritt/angularx-social-login';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, HistoriqueComponent],
+  imports: [CommonModule, FormsModule, RouterModule, HistoriqueComponent, SocialLoginModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -113,7 +113,8 @@ nomDepartement = '';
     private authService: AuthService,
     private requeteService: RequeteService,
     private reclamationService: ReclamationService,
-    private propositionService: PropositionService
+   private propositionService: PropositionService,
+private socialAuthService: SocialAuthService
   ) {}
 
   ngOnInit() {
@@ -292,11 +293,7 @@ nomDepartement = '';
         }
         const email = this.pickProfileField(u, ['emailUtil', 'email', 'mail']) || this.emailUtilisateur;
         this.emailUtilisateur = email || this.emailUtilisateur;
-        this.telUtilisateur = this.pickProfileField(u, [
-          'numTel', 'telephone', 'tel', 'phone', 'numeroTelephone',
-          'mobile', 'numTelephone', 'portable', 'gsm',
-          'telephoneMobile', 'telephonePortable', 'phoneNumber'
-        ]);
+        this.telUtilisateur = raw.numTel ? String(raw.numTel) : '';
         if (!this.telUtilisateur) {
           this.telUtilisateur = this.pickProfileField(jwtPayload, ['phone_number', 'tel', 'telephone']);
         }
@@ -791,5 +788,12 @@ this.profilEdit = {
     },
     error: () => alert('Impossible de charger le fichier.')
   });
+}
+deconnecter() {
+  try { this.socialAuthService.signOut(); } catch(e) {}
+  localStorage.removeItem('token');
+  localStorage.removeItem('role');
+  localStorage.removeItem('permissions');
+  window.location.href = '/login';
 }
 }

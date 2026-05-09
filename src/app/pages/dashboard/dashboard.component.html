@@ -43,9 +43,9 @@
             <span>⚙️</span> Paramètres
           </button>
           <div class="dropdown-divider"></div>
-          <button class="dropdown-item dropdown-item-danger" routerLink="/login" (click)="profileMenuOpen = false">
-            <span>🚪</span> Se déconnecter
-          </button>
+          <button class="dropdown-item dropdown-item-danger" (click)="deconnecter()">
+  <span>🚪</span> Se déconnecter
+</button>
         </div>
       </div>
     </div>
@@ -687,6 +687,7 @@
         <div class="profil-info-row"><span class="profil-info-label">📧 Email</span><span class="profil-info-value">{{ emailUtilisateur }}</span></div>
         <div class="profil-info-row"><span class="profil-info-label">🔑 Rôle</span><span class="profil-info-value">{{ roleUtilisateur }}</span></div>
         <div class="profil-info-row"><span class="profil-info-label">✅ Statut</span><span class="badge badge-green">Actif</span></div>
+        <div class="profil-info-row"><span class="profil-info-label">📱 Téléphone</span><span class="profil-info-value">{{ profilExtra?.numTel || '—' }}</span></div>
         <div class="profil-info-row"><span class="profil-info-label">🏠 Adresse</span><span class="profil-info-value">{{ profilExtra?.adresseClient || '—' }}</span></div>
         <div class="profil-info-row"><span class="profil-info-label">📮 Code postal</span><span class="profil-info-value">{{ profilExtra?.codePostal || '—' }}</span></div>
         <div class="profil-info-row"><span class="profil-info-label">👤 Type client</span><span class="profil-info-value">{{ profilExtra?.typeClient || '—' }}</span></div>

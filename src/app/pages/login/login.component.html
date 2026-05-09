@@ -74,7 +74,21 @@
         <div class="alert-error" *ngIf="errorMessage">
           ⚠️ {{ errorMessage }}
         </div>
+        <!-- Bouton Google -->
+<div style="margin-bottom: 16px;">
+  <div style="display:flex; justify-content:center; margin-bottom:16px;">
+  <asl-google-signin-button 
+    type="standard" 
+    size="large"
+    text="signin_with"
+    shape="rectangular"
+    theme="outline"
+    [width]="330">
+  </asl-google-signin-button>
+</div>
+</div>
 
+<div style="text-align:center; color:#aaa; margin-bottom:12px; font-size:13px;">— ou —</div>
         <div class="form-actions">
           <button class="btn-login" (click)="login()" [disabled]="loading">
             <span *ngIf="!loading">Se connecter →</span>
@@ -107,6 +121,153 @@
 
   <div class="footer-bar">
     © {{ currentYear }} SonelAsk — Tous droits réservés
+  </div>
+
+
+  <!-- MODAL GOOGLE NOUVEAU UTILISATEUR -->
+  <div *ngIf="showGoogleModal" 
+       style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:28px 32px;width:90%;max-width:560px;max-height:90vh;overflow-y:auto;font-family:'Segoe UI',Arial,sans-serif;">
+
+      <h3 style="font-size:2rem;font-weight:400;color:#1a2e5c;margin-bottom:4px;">Bienvenue !</h3>
+      <h4 style="font-size:1.4rem;font-weight:800;color:#de7b3b;margin-bottom:8px;">Complétez votre profil</h4>
+      <p style="color:#555;font-size:0.9rem;margin-bottom:24px;line-height:1.6;">
+        Connecté avec <b>{{ googleNewUser?.email }}</b>
+      </p>
+
+      <!-- CHOIX TYPE -->
+<div *ngIf="!googleTypeChoisi" style="margin-bottom:8px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+    
+    <div (click)="choisirTypeGoogle('CLIENT')"
+         class="choice-card"
+         style="cursor:pointer;text-decoration:none;">
+      <div class="choice-icon">
+        <img src="assets/employe.webp" alt="Client"/>
+      </div>
+      <div class="choice-label">Client</div>
+      <div class="choice-desc">Particulier ou entreprise</div>
+    </div>
+
+    <div (click)="choisirTypeGoogle('EMPLOYE')"
+         class="choice-card"
+         style="cursor:pointer;text-decoration:none;">
+      <div class="choice-icon">
+        <img src="assets/employe_1.webp" alt="Employé"/>
+      </div>
+      <div class="choice-label">Employé</div>
+      <div class="choice-desc">Membre du personnel Sonelgaz</div>
+    </div>
+
+  </div>
+  <button class="modal-close" (click)="showGoogleModal = false">Annuler</button>
+</div>
+
+      <!-- FORMULAIRE CLIENT -->
+      <div *ngIf="googleTypeChoisi === 'CLIENT'">
+        <h5 style="font-size:1rem;font-weight:700;color:#1a2e5c;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #ddd;">Inscription Client</h5>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:0.82rem;font-weight:600;color:#444;margin-bottom:6px;">Prénom <span style="color:#de7b3b;">*</span></label>
+            <input type="text" [(ngModel)]="googleForm.prenomUtil" placeholder="Prénom"
+                   style="width:100%;padding:11px 14px;background:#fff;border:1px solid #ccc;border-radius:6px;color:#1a2e5c;font-size:0.9rem;outline:none;box-sizing:border-box;"/>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:0.82rem;font-weight:600;color:#444;margin-bottom:6px;">Nom <span style="color:#de7b3b;">*</span></label>
+            <input type="text" [(ngModel)]="googleForm.nomUtil" placeholder="Nom"
+                   style="width:100%;padding:11px 14px;background:#fff;border:1px solid #ccc;border-radius:6px;color:#1a2e5c;font-size:0.9rem;outline:none;box-sizing:border-box;"/>
+          </div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="display:block;font-size:0.82rem;font-weight:600;color:#444;margin-bottom:6px;">Téléphone <span style="color:#de7b3b;">*</span></label>
+          <input type="text" [(ngModel)]="googleForm.numTel" placeholder="0555123456"
+                 style="width:100%;padding:11px 14px;background:#fff;border:1px solid #ccc;border-radius:6px;color:#1a2e5c;font-size:0.9rem;outline:none;box-sizing:border-box;"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:0.82rem;font-weight:600;color:#444;margin-bottom:6px;">Code Postal</label>
+            <input type="text" [(ngModel)]="googleForm.codePostal" placeholder="16000"
+                   style="width:100%;padding:11px 14px;background:#fff;border:1px solid #ccc;border-radius:6px;color:#1a2e5c;font-size:0.9rem;outline:none;box-sizing:border-box;"/>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:0.82rem;font-weight:600;color:#444;margin-bottom:6px;">Type Client <span style="color:#de7b3b;">*</span></label>
+            <select [(ngModel)]="googleForm.typeClient"
+                    style="width:100%;padding:11px 14px;background:#fff;border:1px solid #ccc;border-radius:6px;color:#1a2e5c;font-size:0.9rem;outline:none;box-sizing:border-box;">
+              <option value="PARTICULIER">Particulier</option>
+              <option value="ENTREPRISE">Entreprise</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="display:block;font-size:0.82rem;font-weight:600;color:#444;margin-bottom:6px;">Adresse <span style="color:#de7b3b;">*</span></label>
+          <input type="text" [(ngModel)]="googleForm.adresseClient" placeholder="Votre adresse"
+                 style="width:100%;padding:11px 14px;background:#fff;border:1px solid #ccc;border-radius:6px;color:#1a2e5c;font-size:0.9rem;outline:none;box-sizing:border-box;"/>
+        </div>
+      </div>
+
+      <!-- FORMULAIRE EMPLOYE -->
+      <div *ngIf="googleTypeChoisi === 'EMPLOYE'">
+        <h5 style="font-size:1rem;font-weight:700;color:#1a2e5c;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #ddd;">Inscription Employé</h5>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:0.82rem;font-weight:600;color:#444;margin-bottom:6px;">Prénom <span style="color:#de7b3b;">*</span></label>
+            <input type="text" [(ngModel)]="googleForm.prenomUtil" placeholder="Prénom"
+                   style="width:100%;padding:11px 14px;background:#fff;border:1px solid #ccc;border-radius:6px;color:#1a2e5c;font-size:0.9rem;outline:none;box-sizing:border-box;"/>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:0.82rem;font-weight:600;color:#444;margin-bottom:6px;">Nom <span style="color:#de7b3b;">*</span></label>
+            <input type="text" [(ngModel)]="googleForm.nomUtil" placeholder="Nom"
+                   style="width:100%;padding:11px 14px;background:#fff;border:1px solid #ccc;border-radius:6px;color:#1a2e5c;font-size:0.9rem;outline:none;box-sizing:border-box;"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:0.82rem;font-weight:600;color:#444;margin-bottom:6px;">Téléphone <span style="color:#de7b3b;">*</span></label>
+            <input type="text" [(ngModel)]="googleForm.numTel" placeholder="0555123456"
+                   style="width:100%;padding:11px 14px;background:#fff;border:1px solid #ccc;border-radius:6px;color:#1a2e5c;font-size:0.9rem;outline:none;box-sizing:border-box;"/>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:0.82rem;font-weight:600;color:#444;margin-bottom:6px;">Matricule <span style="color:#de7b3b;">*</span></label>
+            <input type="number" [(ngModel)]="googleForm.matricule" placeholder="12345"
+                   style="width:100%;padding:11px 14px;background:#fff;border:1px solid #ccc;border-radius:6px;color:#1a2e5c;font-size:0.9rem;outline:none;box-sizing:border-box;"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+          <div>
+            <label style="display:block;font-size:0.82rem;font-weight:600;color:#444;margin-bottom:6px;">Date d'embauche</label>
+            <input type="date" [(ngModel)]="googleForm.dateEmbauche"
+                   style="width:100%;padding:11px 14px;background:#fff;border:1px solid #ccc;border-radius:6px;color:#1a2e5c;font-size:0.9rem;outline:none;box-sizing:border-box;"/>
+          </div>
+          <div>
+            <label style="display:block;font-size:0.82rem;font-weight:600;color:#444;margin-bottom:6px;">Département <span style="color:#de7b3b;">*</span></label>
+            <select [(ngModel)]="googleForm.nomDepartement"
+                    style="width:100%;padding:11px 14px;background:#fff;border:1px solid #ccc;border-radius:6px;color:#1a2e5c;font-size:0.9rem;outline:none;box-sizing:border-box;">
+              <option value="">-- Choisir --</option>
+              <option *ngFor="let d of departements" [value]="d.nomDepartement">{{ d.nomDepartement }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ERREUR -->
+      <div *ngIf="googleFormError"
+           style="background:rgba(220,53,69,0.1);border:1px solid rgba(220,53,69,0.4);border-radius:6px;padding:10px 14px;color:#dc3545;font-size:0.83rem;margin-bottom:14px;">
+        ⚠️ {{ googleFormError }}
+      </div>
+
+      <!-- BOUTONS -->
+      <div *ngIf="googleTypeChoisi" style="display:flex;gap:12px;margin-top:4px;">
+        <button (click)="googleTypeChoisi = ''"
+                style="flex:1;padding:12px;border:1.5px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:0.9rem;color:#1a2e5c;font-weight:600;">
+          ← Retour
+        </button>
+        <button (click)="soumettreGoogleForm()" [disabled]="googleFormLoading"
+                style="flex:2;padding:12px;border:none;border-radius:6px;background:#de7b3b;color:white;font-weight:700;cursor:pointer;font-size:0.95rem;">
+          {{ googleFormLoading ? 'Création en cours...' : 'Créer mon compte →' }}
+        </button>
+      </div>
+
+    </div>
   </div>
 
 </div>
