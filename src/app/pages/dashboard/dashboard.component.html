@@ -702,16 +702,76 @@
           <p class="page-subtitle">Configurez votre compte</p>
         </div>
         <div class="param-section-card">
-          <h6 class="param-section-title">🔐 Modifier le mot de passe</h6>
-          <div class="param-form">
-            <div class="field-group"><label>Ancien mot de passe</label><input type="password" class="field-input" placeholder="••••••••" [(ngModel)]="mdp.ancien"/></div>
-            <div class="row-2">
-              <div class="field-group"><label>Nouveau mot de passe</label><input type="password" class="field-input" placeholder="••••••••" [(ngModel)]="mdp.nouveau"/></div>
-              <div class="field-group"><label>Confirmer</label><input type="password" class="field-input" placeholder="••••••••" [(ngModel)]="mdp.confirmer"/></div>
-            </div>
-            <button class="btn-action" (click)="changerMotDePasse()">Enregistrer le mot de passe</button>
-          </div>
+  <h6 class="param-section-title">🔐 Modifier le mot de passe</h6>
+  <div class="param-form">
+
+    <div class="field-group">
+      <label>Ancien mot de passe</label>
+      <div style="position:relative;">
+        <input [type]="showMdpAncien ? 'text' : 'password'" class="field-input"
+               placeholder="••••••••" [(ngModel)]="mdp.ancien" style="padding-right:40px;"/>
+        <span (click)="showMdpAncien = !showMdpAncien"
+              style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;">
+          <svg *ngIf="!showMdpAncien" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+</svg>
+<svg *ngIf="showMdpAncien" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>
+</svg>
+        </span>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="field-group">
+        <label>Nouveau mot de passe</label>
+        <div style="position:relative;">
+          <input [type]="showMdpNouveau ? 'text' : 'password'" class="field-input"
+                 placeholder="••••••••" [(ngModel)]="mdp.nouveau" style="padding-right:40px;"/>
+          <span (click)="showMdpNouveau = !showMdpNouveau"
+                style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;">
+            <svg *ngIf="!showMdpNouveau" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+</svg>
+<svg *ngIf="showMdpNouveau" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>
+</svg>
+          </span>
         </div>
+      </div>
+      <div class="field-group">
+        <label>Confirmer</label>
+        <div style="position:relative;">
+          <input [type]="showMdpConfirmer ? 'text' : 'password'" class="field-input"
+                 placeholder="••••••••" [(ngModel)]="mdp.confirmer" style="padding-right:40px;"/>
+          <span (click)="showMdpConfirmer = !showMdpConfirmer"
+                style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:#888;">
+            <svg *ngIf="!showMdpConfirmer" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+</svg>
+<svg *ngIf="showMdpConfirmer" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>
+</svg>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="mdp.nouveau && mdp.nouveau.length < 8"
+         style="color:#e53935; font-size:13px; margin-bottom:8px;">
+      ⚠️ Le mot de passe doit contenir au moins 8 caractères.
+    </div>
+    <div *ngIf="mdp.confirmer && mdp.nouveau !== mdp.confirmer"
+         style="color:#e53935; font-size:13px; margin-bottom:8px;">
+      ⚠️ Les mots de passe ne correspondent pas.
+    </div>
+
+    <button class="btn-action" (click)="changerMotDePasse()">Enregistrer le mot de passe</button>
+  </div>
+</div>
         <div class="param-section-card">
           <h6 class="param-section-title">🌐 Langue de l'interface</h6>
           <div class="param-form">

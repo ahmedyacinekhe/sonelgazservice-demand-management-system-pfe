@@ -32,6 +32,9 @@ export class DashboardComponent implements OnInit {
   profilExtra: any      = null;
 
   mdp = { ancien: '', nouveau: '', confirmer: '' };
+  showMdpAncien = false;
+showMdpNouveau = false;
+showMdpConfirmer = false;
   langueSelectionnee = 'fr';
   notifEmail = true;
   notifApp   = true;
@@ -327,11 +330,30 @@ this.profilEdit = {
   }
 
   changerMotDePasse() {
-    if (!this.mdp.ancien || !this.mdp.nouveau) { alert('Remplissez tous les champs !'); return; }
-    if (this.mdp.nouveau !== this.mdp.confirmer) { alert('Les mots de passe ne correspondent pas !'); return; }
-    alert('Mot de passe modifié avec succès !');
-    this.mdp = { ancien: '', nouveau: '', confirmer: '' };
-  }
+  if (!this.mdp.ancien || !this.mdp.nouveau) { alert('Remplissez tous les champs !'); return; }
+  if (this.mdp.nouveau.length < 8) { alert('Le mot de passe doit contenir au moins 8 caractères !'); return; }
+  if (!/[A-Z]/.test(this.mdp.nouveau)) { alert('Le mot de passe doit contenir au moins une lettre majuscule !'); return; }
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(this.mdp.nouveau)) { alert('Le mot de passe doit contenir au moins un caractère spécial !'); return; }
+  if (this.mdp.nouveau !== this.mdp.confirmer) { alert('Les mots de passe ne correspondent pas !'); return; }
+
+  const role = (this.authService.getRole() || '').toUpperCase();
+  const url = role === 'CLIENT'
+    ? `${this.baseUrl}/Api/clients/me/mot-de-passe`
+    : `${this.baseUrl}/Api/employes/me/mot-de-passe`;
+
+  this.http.put(url,
+    { ancien: this.mdp.ancien, nouveau: this.mdp.nouveau },
+    { headers: this.getHeaders(), responseType: 'text' }
+  ).subscribe({
+    next: () => {
+      alert('Mot de passe modifié avec succès !');
+      this.mdp = { ancien: '', nouveau: '', confirmer: '' };
+    },
+    error: (err) => {
+      alert(err.status === 400 ? 'Ancien mot de passe incorrect !' : 'Erreur lors du changement.');
+    }
+  });
+}
 
   changerLangue() {
     const noms: any = { fr: 'Français', ar: 'Arabe', en: 'Anglais' };
