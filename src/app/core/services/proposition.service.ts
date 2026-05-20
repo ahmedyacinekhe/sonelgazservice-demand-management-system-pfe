@@ -50,6 +50,7 @@ export class PropositionService {
   }
 
   confirmerSoumission(id: number): Observable<any> {
-    return this.http.put(`${this.baseUrl}/Api/propositions/${id}/statut/2`, {}, { headers: this.getHeaders() });
+    return this.http.put(`${this.baseUrl}/Api/propositions/${id}/statut/2`, {}, { headers: this.getHeaders(),responseType: 'text' });
+
   }
 }

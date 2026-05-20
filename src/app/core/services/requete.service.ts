@@ -51,6 +51,6 @@ export class RequeteService {
   }
 
   confirmerSoumission(id: number): Observable<any> {
-    return this.http.put(`${this.baseUrl}/Api/requetes/${id}/statut/2`, {}, { headers: this.getHeaders() });
+    return this.http.put(`${this.baseUrl}/Api/requetes/${id}/statut/2`, {}, { headers: this.getHeaders() , responseType: 'text' });
   }
 }

@@ -51,6 +51,6 @@ export class ReclamationService {
   }
 
   confirmerSoumission(id: number): Observable<any> {
-    return this.http.put(`${this.baseUrl}/Api/reclamations/${id}/statut/2`, {}, { headers: this.getHeaders() });
+    return this.http.put(`${this.baseUrl}/Api/reclamations/${id}/statut/2`, {}, { headers: this.getHeaders() ,responseType: 'text' });
   }
 }

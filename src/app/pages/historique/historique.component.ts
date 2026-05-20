@@ -501,16 +501,19 @@ export class HistoriqueComponent implements OnInit {
     service.confirmerSoumission(id).subscribe({
       next: () => {
         demande.statut = 'EN_ATTENTE';
-        this.messageSoumission = '🔒 Votre demande a été confirmée.';
-        this.messageType = 'info';
+        this.messageSoumission = '✅ Votre demande a été confirmée et envoyée au responsable.';
+        this.messageType = 'success';
       },
-      error: () => {
-        this.messageSoumission = '❌ Erreur lors de la confirmation.';
+      error: (err) => {
+        if (err.status === 429) {
+          this.messageSoumission = '⚠️ Vous avez atteint le maximum de 3 demandes non traitées. Veuillez attendre qu\'elles soient traitées avant d\'en soumettre une nouvelle.';
+        } else {
+          this.messageSoumission = '❌ Erreur lors de la confirmation.';
+        }
         this.messageType = 'error';
       }
     });
   }
-
   // ===== SUPPRESSION =====
 
   supprimer(demande: any) {
