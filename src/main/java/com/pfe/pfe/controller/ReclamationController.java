@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +41,6 @@ public class ReclamationController {
         return reclamationService.findAll();
     }
 
-    // ✅ NOUVEAU : seulement les demandes de l'utilisateur connecté
     @GetMapping("/mes-demandes")
     public List<Reclamation> getMesDemandes(@AuthenticationPrincipal UserDetails userDetails) {
         return reclamationService.findByUtilisateur(userDetails.getUsername());
@@ -51,15 +52,16 @@ public class ReclamationController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Reclamation save(
+    public ResponseEntity<?> save(
             @RequestPart("data") Reclamation reclamation,
             @RequestPart(value = "fichier", required = false) MultipartFile fichier,
             @AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
-        reclamation.setDateDemande(new java.sql.Date(System.currentTimeMillis()));
-
+        // Création en BROUILLON (id_etat=1), pas de vérification
         Utilisateur utilisateur = utilisateurRepository
                 .findByEmailUtil(userDetails.getUsername()).orElse(null);
+
+        reclamation.setDateDemande(new java.sql.Date(System.currentTimeMillis()));
         reclamation.setUtilisateur(utilisateur);
 
         if (fichier != null && !fichier.isEmpty()) {
@@ -75,12 +77,12 @@ public class ReclamationController {
         DemandeEtatDetail etatDetail = new DemandeEtatDetail();
         DemandeEtatDetailId etatId = new DemandeEtatDetailId();
         etatId.setIdDemande(saved.getIdDemande());
-        etatId.setIdEtat(1);
+        etatId.setIdEtat(1); // BROUILLON
         etatDetail.setDemandeEtatDetailId(etatId);
         etatDetail.setDateEtat(new java.sql.Date(System.currentTimeMillis()));
         demandeEtatDetailService.save(etatDetail);
 
-        return saved;
+        return ResponseEntity.ok(saved);
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -104,8 +106,28 @@ public class ReclamationController {
         return reclamationService.save(reclamation);
     }
 
+    // ← Vérification ici au moment de la soumission (passage à EN_ATTENTE)
     @PutMapping("/{id}/statut/{idEtat}")
-    public void changerStatut(@PathVariable int id, @PathVariable int idEtat) {
+    public ResponseEntity<?> changerStatut(
+            @PathVariable int id,
+            @PathVariable int idEtat,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        // Vérification uniquement quand on soumet (id_etat=2 = EN_ATTENTE)
+        if (idEtat == 2) {
+            Utilisateur utilisateur = utilisateurRepository
+                    .findByEmailUtil(userDetails.getUsername()).orElse(null);
+
+            if (utilisateur != null) {
+                long nbNonTraitees = demandeEtatDetailRepository
+                        .countDemandesNonTraiteesParUtilisateur(utilisateur.getIdUtil());
+                if (nbNonTraitees >= 3) {
+                    return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                            .body("Vous avez atteint le maximum de 3 demandes en attente. Veuillez attendre qu'elles soient traitées avant d'en soumettre une nouvelle.");
+                }
+            }
+        }
+
         demandeEtatDetailRepository.deleteByIdDemande(id);
 
         DemandeEtatDetail etatDetail = new DemandeEtatDetail();
@@ -115,6 +137,8 @@ public class ReclamationController {
         etatDetail.setDemandeEtatDetailId(etatDetailId);
         etatDetail.setDateEtat(new java.sql.Date(System.currentTimeMillis()));
         demandeEtatDetailService.save(etatDetail);
+
+        return ResponseEntity.ok("Statut mis à jour");
     }
 
     @DeleteMapping("/{id}")
@@ -130,8 +154,9 @@ public class ReclamationController {
         if (etats.isEmpty()) return "INCONNU";
         return etats.get(0).getEtatDemande().getLibelleEtat();
     }
+
     @GetMapping("/departement/{idDepartement}")
-public List<Reclamation> getByDepartement(@PathVariable int idDepartement) {
-    return reclamationService.findByDepartement(idDepartement);
-}
+    public List<Reclamation> getByDepartement(@PathVariable int idDepartement) {
+        return reclamationService.findByDepartement(idDepartement);
+    }
 }

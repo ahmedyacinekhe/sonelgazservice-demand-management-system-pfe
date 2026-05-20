@@ -19,4 +19,11 @@ public interface DemandeEtatDetailRepository extends JpaRepository<DemandeEtatDe
     void deleteByIdDemande(int idDemande);
     @Query("SELECT d FROM DemandeEtatDetail d WHERE d.demandeEtatDetailId.idDemande = :idDemande")
 List<DemandeEtatDetail> findByIdDemande(int idDemande);
+ @Query(value = """
+    SELECT COUNT(*) FROM demande_etat_detail ded
+    INNER JOIN demande d ON d.id_demande = ded.id_demande
+    WHERE ded.id_etat = 2
+    AND d.id_util = :idUtil
+""", nativeQuery = true)
+long countDemandesNonTraiteesParUtilisateur(int idUtil);
 }
