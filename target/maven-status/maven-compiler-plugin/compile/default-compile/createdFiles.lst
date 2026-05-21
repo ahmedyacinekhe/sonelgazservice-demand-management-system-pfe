@@ -10,6 +10,7 @@ com\pfe\pfe\controller\DirectionCentraleController.class
 com\pfe\pfe\service\DemandeService.class
 com\pfe\pfe\service\DirectionCentraleService.class
 com\pfe\pfe\service\DepartementMetierService.class
+com\pfe\pfe\repository\NotificationRepository.class
 com\pfe\pfe\service\RoleUtilisateurService.class
 com\pfe\pfe\security\JwtUtil.class
 com\pfe\pfe\controller\DemandeEtatDetailController.class
@@ -20,6 +21,7 @@ com\pfe\pfe\controller\DepartementMetierController.class
 com\pfe\pfe\entity\EtatDemande.class
 com\pfe\pfe\service\PropositionService.class
 com\pfe\pfe\entity\RoleUtilisateurId.class
+com\pfe\pfe\controller\ReponseController$ReponseRequest$DemandeRef.class
 com\pfe\pfe\controller\RequeteController.class
 com\pfe\pfe\entity\DepartementMetier.class
 com\pfe\pfe\repository\UtilisateurRepository.class
@@ -32,6 +34,7 @@ com\pfe\pfe\controller\ReponseController.class
 com\pfe\pfe\entity\Employe.class
 com\pfe\pfe\entity\Demande.class
 com\pfe\pfe\entity\DemandeEtatDetailId.class
+com\pfe\pfe\service\NotificationService.class
 com\pfe\pfe\controller\DepartementController.class
 com\pfe\pfe\service\ReclamationService.class
 com\pfe\pfe\entity\DemandeEtatDetail.class
@@ -73,6 +76,7 @@ com\pfe\pfe\controller\EtatDemandeController.class
 com\pfe\pfe\controller\RoleUtilisateurController.class
 com\pfe\pfe\controller\RoleController.class
 com\pfe\pfe\controller\ClientController.class
+com\pfe\pfe\controller\ReponseController$ReponseRequest.class
 com\pfe\pfe\service\DepartementService.class
 com\pfe\pfe\controller\MetierController.class
 com\pfe\pfe\service\FilialeService.class
@@ -81,7 +85,10 @@ com\pfe\pfe\service\EtatDemandeService.class
 com\pfe\pfe\repository\PropositionRepository.class
 com\pfe\pfe\controller\FichierController.class
 com\pfe\pfe\entity\Client.class
+com\pfe\pfe\dto\PreferencesDTO.class
+com\pfe\pfe\entity\Notification.class
 com\pfe\pfe\repository\RolePermissionRepository.class
+com\pfe\pfe\controller\NotificationController.class
 com\pfe\pfe\controller\FilialeController.class
 com\pfe\pfe\entity\Requete.class
 com\pfe\pfe\service\UtilisateurService.class
@@ -90,6 +97,7 @@ com\pfe\pfe\entity\Permission.class
 com\pfe\pfe\repository\ReclamationRepository.class
 com\pfe\pfe\config\DataInitializer.class
 com\pfe\pfe\repository\RoleRepository.class
+com\pfe\pfe\controller\GoogleAuthController.class
 com\pfe\pfe\controller\AuthController.class
 com\pfe\pfe\service\MetierService.class
 com\pfe\pfe\dto\LoginResponse.class

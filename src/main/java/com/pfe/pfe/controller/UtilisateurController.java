@@ -1,5 +1,6 @@
 package com.pfe.pfe.controller;
 
+import java.security.Principal;
 import java.util.List;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.ResponseEntity;
 
 import com.pfe.pfe.entity.Utilisateur;
+import com.pfe.pfe.dto.PreferencesDTO;
 import com.pfe.pfe.entity.Employe;
 import com.pfe.pfe.entity.Role;
 import com.pfe.pfe.entity.RoleUtilisateur;
@@ -123,4 +125,14 @@ public class UtilisateurController {
     public void deleteById(@PathVariable int id){
         utilisateurService.deleteById(id);
     }
+    @GetMapping("/me/preferences")
+public ResponseEntity<PreferencesDTO> getPreferences(Principal principal) {
+    return ResponseEntity.ok(utilisateurService.getPreferences(principal.getName()));
+}
+
+@PutMapping("/me/preferences")
+public ResponseEntity<Void> updatePreferences(Principal principal, @RequestBody PreferencesDTO dto) {
+    utilisateurService.updatePreferences(principal.getName(), dto);
+    return ResponseEntity.ok().build();
+}
 }

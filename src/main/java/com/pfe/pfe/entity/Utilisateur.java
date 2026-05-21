@@ -32,5 +32,8 @@ public class Utilisateur {
 
     @Column(name="mot_de_passe")
     private String motDePasse;
+
+    @Column(name = "notif_app", nullable = false)
+private boolean notifApp = true;
    
 }

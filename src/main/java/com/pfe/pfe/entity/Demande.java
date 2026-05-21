@@ -1,6 +1,6 @@
 package com.pfe.pfe.entity;
 
-import java.sql.Date;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -20,7 +20,7 @@ public class Demande {
     private int idDemande;
 
     @Column(name="date_demande")
-    private Date dateDemande;
+    private LocalDateTime dateDemande;
 
     @Column(name="description")
     private String description;

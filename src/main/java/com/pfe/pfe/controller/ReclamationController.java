@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.pfe.pfe.entity.*;
 import com.pfe.pfe.repository.UtilisateurRepository;
 import com.pfe.pfe.service.ReclamationService;
+import com.pfe.pfe.service.NotificationService;
 
 import jakarta.transaction.Transactional;
 
@@ -35,6 +36,7 @@ public class ReclamationController {
     @Autowired private UtilisateurRepository utilisateurRepository;
     @Autowired private DemandeEtatDetailService demandeEtatDetailService;
     @Autowired private DemandeEtatDetailRepository demandeEtatDetailRepository;
+    @Autowired private NotificationService notificationService;
 
     @GetMapping
     public List<Reclamation> findAll() {
@@ -42,8 +44,29 @@ public class ReclamationController {
     }
 
     @GetMapping("/mes-demandes")
-    public List<Reclamation> getMesDemandes(@AuthenticationPrincipal UserDetails userDetails) {
-        return reclamationService.findByUtilisateur(userDetails.getUsername());
+    public List<java.util.Map<String, Object>> getMesDemandes(@AuthenticationPrincipal UserDetails userDetails) {
+        List<Reclamation> demandes = reclamationService.findByUtilisateur(userDetails.getUsername());
+        return demandes.stream().map(d -> {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("idDemande", d.getIdDemande());
+            map.put("description", d.getDescription());
+            map.put("dateDemande", d.getDateDemande());
+            map.put("typeReclamation", d.getTypeReclamation());
+            map.put("niveauUrgence", d.getNiveauUrgence());
+            map.put("pieceJointe", d.getPieceJointe());
+
+            if (d.getDepartement() != null) {
+                java.util.Map<String, Object> dep = new java.util.HashMap<>();
+                dep.put("idDepartement", d.getDepartement().getIdDepartement());
+                dep.put("nomDepartement", d.getDepartement().getNomDepartement());
+                map.put("departement", dep);
+            }
+
+            List<DemandeEtatDetail> etats = demandeEtatDetailRepository.findByIdDemande(d.getIdDemande());
+            String statut = etats.isEmpty() ? "INCONNU" : etats.get(0).getEtatDemande().getLibelleEtat();
+            map.put("statut", statut);
+            return map;
+        }).collect(java.util.stream.Collectors.toList());
     }
 
     @GetMapping("/{id}")
@@ -57,11 +80,10 @@ public class ReclamationController {
             @RequestPart(value = "fichier", required = false) MultipartFile fichier,
             @AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
-        // Création en BROUILLON (id_etat=1), pas de vérification
         Utilisateur utilisateur = utilisateurRepository
                 .findByEmailUtil(userDetails.getUsername()).orElse(null);
 
-        reclamation.setDateDemande(new java.sql.Date(System.currentTimeMillis()));
+        reclamation.setDateDemande(java.time.LocalDateTime.now());
         reclamation.setUtilisateur(utilisateur);
 
         if (fichier != null && !fichier.isEmpty()) {
@@ -106,18 +128,19 @@ public class ReclamationController {
         return reclamationService.save(reclamation);
     }
 
-    // ← Vérification ici au moment de la soumission (passage à EN_ATTENTE)
     @PutMapping("/{id}/statut/{idEtat}")
     public ResponseEntity<?> changerStatut(
             @PathVariable int id,
             @PathVariable int idEtat,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        // Vérification uniquement quand on soumet (id_etat=2 = EN_ATTENTE)
-        if (idEtat == 2) {
-            Utilisateur utilisateur = utilisateurRepository
-                    .findByEmailUtil(userDetails.getUsername()).orElse(null);
+        Utilisateur utilisateur = utilisateurRepository
+                .findByEmailUtil(userDetails.getUsername()).orElse(null);
 
+        Reclamation reclamation = reclamationService.findById(id);
+
+        if (idEtat == 2) {
+            // Vérification limite 3 demandes
             if (utilisateur != null) {
                 long nbNonTraitees = demandeEtatDetailRepository
                         .countDemandesNonTraiteesParUtilisateur(utilisateur.getIdUtil());
@@ -125,6 +148,33 @@ public class ReclamationController {
                     return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                             .body("Vous avez atteint le maximum de 3 demandes en attente. Veuillez attendre qu'elles soient traitées avant d'en soumettre une nouvelle.");
                 }
+            }
+
+            // Notifier les responsables du département
+            if (reclamation.getDepartement() != null) {
+                notificationService.notifierResponsables(
+                    reclamation.getDepartement().getIdDepartement(),
+                    "Nouvelle réclamation soumise : " + reclamation.getDescription(),
+                    "RECLAMATION"
+                );
+            }
+
+        } else {
+            // Notifier le demandeur du changement de statut
+            String libelleEtat = switch (idEtat) {
+                case 3 -> "EN COURS";
+                case 4 -> "TRAITÉE";
+                case 5 -> "CLÔTURÉE";
+                case 6 -> "ANNULÉE";
+                default -> "MISE À JOUR";
+            };
+
+            if (reclamation.getUtilisateur() != null) {
+                notificationService.envoyer(
+                    reclamation.getUtilisateur().getEmailUtil(),
+                    "Votre réclamation a été mise à jour : " + libelleEtat,
+                    "RECLAMATION"
+                );
             }
         }
 
@@ -156,7 +206,27 @@ public class ReclamationController {
     }
 
     @GetMapping("/departement/{idDepartement}")
-    public List<Reclamation> getByDepartement(@PathVariable int idDepartement) {
-        return reclamationService.findByDepartement(idDepartement);
-    }
+public List<java.util.Map<String, Object>> getByDepartement(@PathVariable int idDepartement) {
+    List<Reclamation> demandes = reclamationService.findByDepartement(idDepartement);
+    return demandes.stream().map(d -> {
+        java.util.Map<String, Object> map = new java.util.HashMap<>();
+        map.put("idDemande", d.getIdDemande());
+        map.put("description", d.getDescription());
+        map.put("dateDemande", d.getDateDemande());
+        map.put("typeReclamation", d.getTypeReclamation());
+        map.put("niveauUrgence", d.getNiveauUrgence());
+        map.put("pieceJointe", d.getPieceJointe());
+        if (d.getUtilisateur() != null) {
+            java.util.Map<String, Object> u = new java.util.HashMap<>();
+            u.put("prenomUtil", d.getUtilisateur().getPrenomUtil());
+            u.put("nomUtil", d.getUtilisateur().getNomUtil());
+            u.put("emailUtil", d.getUtilisateur().getEmailUtil());
+            map.put("utilisateur", u);
+        }
+        List<DemandeEtatDetail> etats = demandeEtatDetailRepository.findByIdDemande(d.getIdDemande());
+        String statut = etats.isEmpty() ? "EN_ATTENTE" : etats.get(0).getEtatDemande().getLibelleEtat();
+        map.put("statut", statut);
+        return map;
+    }).collect(java.util.stream.Collectors.toList());
+}
 }

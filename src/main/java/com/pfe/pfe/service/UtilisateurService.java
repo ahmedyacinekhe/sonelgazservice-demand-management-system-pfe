@@ -9,6 +9,7 @@ import jakarta.transaction.Transactional;
 
 import com.pfe.pfe.entity.Employe;
 import com.pfe.pfe.entity.Utilisateur;
+import com.pfe.pfe.dto.PreferencesDTO;
 import com.pfe.pfe.entity.Departement;
 import com.pfe.pfe.repository.UtilisateurRepository;
 import com.pfe.pfe.repository.DepartementRepository;
@@ -184,4 +185,21 @@ public class UtilisateurService {
             .setParameter("id", id)
             .executeUpdate();
     }
+    public PreferencesDTO getPreferences(String email) {
+    Utilisateur u = utilisateurRepository.findByEmailUtil(email)
+        .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+    PreferencesDTO dto = new PreferencesDTO();
+    dto.setNotifApp(u.isNotifApp());
+    return dto;
+}
+
+public void updatePreferences(String email, PreferencesDTO dto) {
+    Utilisateur u = utilisateurRepository.findByEmailUtil(email)
+        .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+    u.setNotifApp(dto.isNotifApp());
+    utilisateurRepository.save(u);
+}
+
+
+
 }
