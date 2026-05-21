@@ -35,7 +35,7 @@
               <td>{{ r.idDemande }}</td>
               <td>{{ r.description }}</td>
               <td>{{ r.typeRequete }}</td>
-              <td>{{ r.dateDemande }}</td>
+              <td>{{ r.dateDemande | date:'dd/MM/yyyy HH:mm' }}</td>
               <td><span class="badge badge-yellow">EN COURS</span></td>
               <td class="actions-cell">
                 <button class="btn-table btn-info" (click)="voirInfo(r)">Info</button>
@@ -61,7 +61,7 @@
         <p><strong>ID :</strong> {{ selectedRequete.idDemande }}</p>
         <p><strong>Description :</strong> {{ selectedRequete.description }}</p>
         <p><strong>Type :</strong> {{ selectedRequete.typeRequete }}</p>
-        <p><strong>Date :</strong> {{ selectedRequete.dateDemande }}</p>
+        <p><strong>Date :</strong> {{ selectedRequete.dateDemande | date:'dd/MM/yyyy HH:mm' }}</p>
       </div>
       <div class="modal-footer-btns">
         <button class="btn-table btn-gray" (click)="selectedRequete = null">Fermer</button>

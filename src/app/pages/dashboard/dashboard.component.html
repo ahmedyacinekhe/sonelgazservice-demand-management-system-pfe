@@ -15,6 +15,42 @@
       </div>
     </div>
     <div class="nav-right">
+      <!-- CLOCHE NOTIFICATION -->
+<div class="notif-wrapper" *ngIf="notifApp">
+  <button class="notif-btn" (click)="$event.stopPropagation(); notifOpen = !notifOpen">
+    🔔
+    <span class="notif-badge" *ngIf="notifCount > 0">{{ notifCount }}</span>
+  </button>
+
+  <div class="notif-dropdown" *ngIf="notifOpen" (click)="$event.stopPropagation()">
+    <div class="notif-header">
+      <span>🔔 Notifications</span>
+      <span class="notif-count-label">{{ notifCount }} non lue(s)</span>
+    </div>
+    <div class="notif-list">
+      <div *ngIf="notifications.length === 0" class="notif-empty">
+        Aucune notification
+      </div>
+      <div *ngFor="let n of notifications; trackBy: trackNotif"
+           class="notif-item"
+           [class.notif-unread]="!n.lu">
+        <div class="notif-icon">
+          {{ n.type === 'NOUVELLE_DEMANDE' ? '📋' : '🔄' }}
+        </div>
+        <div class="notif-body">
+          <div class="notif-message">{{ n.message }}</div>
+          <div class="notif-date">{{ n.dateCreation | date:'dd/MM/yyyy HH:mm' }}</div>
+        </div>
+        <div class="notif-actions">
+          <button *ngIf="!n.lu" class="notif-action-btn" title="Marquer comme lu"
+                  (click)="$event.stopPropagation(); marquerNotifLue(n.idNotification)">✓</button>
+          <button class="notif-action-btn notif-delete-btn" title="Supprimer"
+                  (click)="$event.stopPropagation(); supprimerNotif(n.idNotification)">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
       <div class="nav-profile" (click)="$event.stopPropagation(); profileMenuOpen = !profileMenuOpen"
            [class.open]="profileMenuOpen">
         <div class="profile-avatar-box">
@@ -364,10 +400,18 @@
       <p class="page-subtitle">Consultez et gérez les propositions de votre département</p>
     </div>
   </div>
-  <div style="margin-bottom:16px;">
-    <input class="field-input" style="max-width:320px;" placeholder="🔍 Rechercher par ID..."
-           [(ngModel)]="rechercheDemande"/>
-  </div>
+  <div style="margin-bottom:16px; display:flex; gap:12px; flex-wrap:wrap;">
+  <input class="field-input" style="max-width:260px;" placeholder="🔍 Rechercher par ID ou description..."
+         [(ngModel)]="rechercheDemande"/>
+  <select class="field-input" style="max-width:200px;" [(ngModel)]="filtreStatut">
+    <option value="">-- Tous les statuts --</option>
+    <option value="EN_ATTENTE">En attente</option>
+    <option value="EN_COURS">En cours</option>
+    <option value="TRAITEE">Traitée</option>
+    <option value="CLOTUREE">Clôturée</option>
+    <option value="ANNULEE">Annulée</option>
+  </select>
+</div>
   <div class="table-wrapper">
     <table class="data-table">
       <thead>
@@ -379,7 +423,7 @@
           
         <td>{{ getNomUtilisateur(p) }}</td>
 <td>{{ p.typeProposition }}</td>
-          <td>{{ p.dateDemande }}</td>
+          <td>{{ p.dateDemande | date:'dd/MM/yyyy HH:mm' }}</td>
           <td><span class="badge badge-yellow">{{ p.statut || 'EN_ATTENTE' }}</span></td>
           <td class="actions-cell">
             <button class="btn-table btn-info" (click)="selectedProposition = p">Info</button>
@@ -453,10 +497,18 @@
       <p class="page-subtitle">Consultez et gérez les requêtes de votre département</p>
     </div>
   </div>
-  <div style="margin-bottom:16px;">
-    <input class="field-input" style="max-width:320px;" placeholder="🔍 Rechercher par ID..."
-           [(ngModel)]="rechercheDemande"/>
-  </div>
+  <div style="margin-bottom:16px; display:flex; gap:12px; flex-wrap:wrap;">
+  <input class="field-input" style="max-width:260px;" placeholder="🔍 Rechercher par ID ou description..."
+         [(ngModel)]="rechercheDemande"/>
+  <select class="field-input" style="max-width:200px;" [(ngModel)]="filtreStatut">
+    <option value="">-- Tous les statuts --</option>
+    <option value="EN_ATTENTE">En attente</option>
+    <option value="EN_COURS">En cours</option>
+    <option value="TRAITEE">Traitée</option>
+    <option value="CLOTUREE">Clôturée</option>
+    <option value="ANNULEE">Annulée</option>
+  </select>
+</div>
   <div class="table-wrapper">
     <table class="data-table">
       <thead>
@@ -467,7 +519,7 @@
           <td>{{ r.idDemande }}</td>
          <td>{{ getNomUtilisateur(r) }}</td>
 <td>{{ r.typeRequete }}</td>
-          <td>{{ r.dateDemande }}</td>
+          <td>{{ r.dateDemande | date:'dd/MM/yyyy HH:mm' }}</td>
           <td><span class="badge badge-yellow">{{ r.statut || 'EN_ATTENTE' }}</span></td>
           <td class="actions-cell">
             <button class="btn-table btn-info" (click)="selectedRequete = r">Info</button>
@@ -540,10 +592,18 @@
       <p class="page-subtitle">Consultez et gérez les réclamations de votre département</p>
     </div>
   </div>
-  <div style="margin-bottom:16px;">
-    <input class="field-input" style="max-width:320px;" placeholder="🔍 Rechercher par ID..."
-           [(ngModel)]="rechercheDemande"/>
-  </div>
+  <div style="margin-bottom:16px; display:flex; gap:12px; flex-wrap:wrap;">
+  <input class="field-input" style="max-width:260px;" placeholder="🔍 Rechercher par ID ou description..."
+         [(ngModel)]="rechercheDemande"/>
+  <select class="field-input" style="max-width:200px;" [(ngModel)]="filtreStatut">
+    <option value="">-- Tous les statuts --</option>
+    <option value="EN_ATTENTE">En attente</option>
+    <option value="EN_COURS">En cours</option>
+    <option value="TRAITEE">Traitée</option>
+    <option value="CLOTUREE">Clôturée</option>
+    <option value="ANNULEE">Annulée</option>
+  </select>
+</div>
   <div class="table-wrapper">
     <table class="data-table">
       <thead>
@@ -560,7 +620,7 @@
               {{ r.niveauUrgence }}
             </span>
           </td>
-          <td>{{ r.dateDemande }}</td>
+          <td>{{ r.dateDemande | date:'dd/MM/yyyy HH:mm' }}</td>
           <td><span class="badge badge-yellow">{{ r.statut || 'EN_ATTENTE' }}</span></td>
           <td class="actions-cell">
             <button class="btn-table btn-info" (click)="selectedReclamation = r">Info</button>
@@ -773,29 +833,13 @@
     <button class="btn-action" (click)="changerMotDePasse()">Enregistrer le mot de passe</button>
   </div>
 </div>
-        <div class="param-section-card">
-          <h6 class="param-section-title">🌐 Langue de l'interface</h6>
-          <div class="param-form">
-            <div class="field-group"><label>Choisir la langue</label>
-              <select class="field-input" [(ngModel)]="langueSelectionnee">
-                <option value="fr">🇫🇷 Français</option>
-                <option value="ar">🇩🇿 Arabe</option>
-                <option value="en">🇬🇧 Anglais</option>
-              </select>
-            </div>
-            <button class="btn-action" (click)="changerLangue()">Appliquer la langue</button>
-          </div>
-        </div>
+        
         <div class="param-section-card">
           <h6 class="param-section-title">🔔 Notifications</h6>
           <div class="param-toggles">
             <div class="param-toggle-row">
-              <div><div class="param-toggle-label">Notifications par email</div><div class="param-toggle-desc">Recevoir les alertes par email</div></div>
-              <label class="toggle-switch"><input type="checkbox" [(ngModel)]="notifEmail"/><span class="toggle-slider"></span></label>
-            </div>
-            <div class="param-toggle-row">
               <div><div class="param-toggle-label">Notifications dans l'application</div><div class="param-toggle-desc">Afficher les alertes dans le dashboard</div></div>
-              <label class="toggle-switch"><input type="checkbox" [(ngModel)]="notifApp"/><span class="toggle-slider"></span></label>
+              <label class="toggle-switch" (click)="$event.stopPropagation()"><input type="checkbox" [checked]="notifApp" (change)="notifApp = !notifApp; toggleNotifApp()"/><span class="toggle-slider"></span></label>
             </div>
           </div>
         </div>

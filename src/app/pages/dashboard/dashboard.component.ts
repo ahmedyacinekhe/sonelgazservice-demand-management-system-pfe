@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -9,6 +9,7 @@ import { PropositionService } from '../../core/services/proposition.service';
 import { AuthService } from '../../core/services/auth.service';
 import { HistoriqueComponent } from '../historique/historique.component';
 import { SocialAuthService, SocialLoginModule } from '@abacritt/angularx-social-login';
+import { NotificationService, AppNotification } from '../../core/services/notification.service';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -16,7 +17,7 @@ import { SocialAuthService, SocialLoginModule } from '@abacritt/angularx-social-
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
 
   activeSection = 'home';
   sidebarOpen = true;
@@ -37,7 +38,11 @@ showMdpNouveau = false;
 showMdpConfirmer = false;
   langueSelectionnee = 'fr';
   notifEmail = true;
-  notifApp   = true;
+  get currentUserKey() {
+  const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  return 'notifApp_' + (user.id || user.email || 'default');
+}
+notifApp = true;
 
   demandeTypeSelectionne = '';
   demandeSubmitting = false;
@@ -94,6 +99,7 @@ showMdpConfirmer = false;
   // ===== NOUVELLES VARIABLES =====
   idDepartementResponsable: number | null = null;
   rechercheDemande = '';
+  filtreStatut = '';
   demandeEnCours: any = null;
   nouveauStatut = '';
   reponseTexte = '';
@@ -104,6 +110,11 @@ profilEdit = { prenomUtil: '', nomUtil: '', numTel: '' };
 matricule = '';
 dateEmbauche = '';
 nomDepartement = '';
+notifications: AppNotification[] = [];
+notifOpen = false;
+private pollingInterval: any;
+private dernierStatuts: Record<string, string> = {};
+private idMaxDemande = 0;
 
   private baseUrl = 'http://localhost:8082';
 
@@ -114,7 +125,8 @@ nomDepartement = '';
     private requeteService: RequeteService,
     private reclamationService: ReclamationService,
    private propositionService: PropositionService,
-private socialAuthService: SocialAuthService
+private socialAuthService: SocialAuthService,
+private notifService: NotificationService
   ) {}
 
   ngOnInit() {
@@ -124,9 +136,31 @@ private socialAuthService: SocialAuthService
       this.loadAll();
     }
     this.loadCurrentUser();
-    this.http.get<any[]>(`${this.baseUrl}/Api/metier`, { headers: this.getHeaders() })
-      .subscribe({ next: (d) => this.metiers = d, error: () => {} });
+    this.http.get<any>(`${this.baseUrl}/Api/utilisateurs/me/preferences`, { headers: this.getHeaders() })
+  .subscribe({
+    next: (prefs) => {
+      this.notifApp = prefs.notifApp !== false;
+      localStorage.setItem(this.currentUserKey, String(this.notifApp));
+      this.cdr.detectChanges();
+    },
+    error: () => {
+      // fallback localStorage
+      this.notifApp = localStorage.getItem(this.currentUserKey) !== 'false';
+    }
+  });
     this.chargerDepartementResponsable();
+    this.chargerNotifications();
+    this.http.get<any>(`${this.baseUrl}/Api/utilisateurs/me/preferences`, { headers: this.getHeaders() })
+  .subscribe({
+    next: (prefs) => {
+      this.notifApp = prefs.notifApp !== false;
+      this.cdr.detectChanges();
+    },
+    error: () => {
+      this.notifApp = true;
+    }
+  });
+    
   }
 
   normalizeActiveSection(): void {
@@ -483,41 +517,66 @@ this.profilEdit = {
     this.http.get<any>(`${this.baseUrl}/Api/employes/me/departement`, { headers: this.getHeaders() })
       .subscribe({
         next: (dept) => {
-          if (dept) this.idDepartementResponsable = dept.idDepartement;
-        },
+  if (dept) {
+    this.idDepartementResponsable = dept.idDepartement;
+    // Initialiser les statuts puis attendre 2s avant de démarrer le polling
+    this.initialiserStatuts();
+    setTimeout(() => {
+      this.demarrerPolling();
+    }, 2000);
+  }
+},
         error: () => {}
       });
   }
 
   ouvrirListePropositions() {
-    this.activeSection = 'liste-propositions';
-    this.rechercheDemande = '';
-    const url = this.idDepartementResponsable
-      ? `${this.baseUrl}/Api/propositions/departement/${this.idDepartementResponsable}`
-      : `${this.baseUrl}/Api/propositions`;
-    this.http.get<any[]>(url, { headers: this.getHeaders() })
-      .subscribe({ next: (d) => this.propositions = d, error: () => {} });
-  }
+  this.activeSection = 'liste-propositions';
+  this.rechercheDemande = '';
+  this.filtreStatut = '';
+  const url = this.idDepartementResponsable
+    ? `${this.baseUrl}/Api/propositions/departement/${this.idDepartementResponsable}`
+    : `${this.baseUrl}/Api/propositions`;
+  this.http.get<any[]>(url, { headers: this.getHeaders() })
+    .subscribe({ 
+      next: (d) => this.propositions = d
+        .filter(p => p.statut !== 'SUPPRIMEE' && p.statut !== 'SUPPRIME')
+        .sort((a, b) => b.idDemande - a.idDemande), 
+      error: () => {} 
+    });
+}
 
   ouvrirListeRequetes() {
-    this.activeSection = 'liste-requetes';
-    this.rechercheDemande = '';
-    const url = this.idDepartementResponsable
-      ? `${this.baseUrl}/Api/requetes/departement/${this.idDepartementResponsable}`
-      : `${this.baseUrl}/Api/requetes`;
-    this.http.get<any[]>(url, { headers: this.getHeaders() })
-      .subscribe({ next: (d) => this.requetes = d, error: () => {} });
-  }
+  this.activeSection = 'liste-requetes';
+  this.rechercheDemande = '';
+  this.filtreStatut = '';
+  const url = this.idDepartementResponsable
+    ? `${this.baseUrl}/Api/requetes/departement/${this.idDepartementResponsable}`
+    : `${this.baseUrl}/Api/requetes`;
+  this.http.get<any[]>(url, { headers: this.getHeaders() })
+    .subscribe({ 
+      next: (d) => this.requetes = d
+        .filter(r => r.statut !== 'SUPPRIMEE' && r.statut !== 'SUPPRIME')
+        .sort((a, b) => b.idDemande - a.idDemande), 
+      error: () => {} 
+    });
+}
 
   ouvrirListeReclamations() {
-    this.activeSection = 'liste-reclamations';
-    this.rechercheDemande = '';
-    const url = this.idDepartementResponsable
-      ? `${this.baseUrl}/Api/reclamations/departement/${this.idDepartementResponsable}`
-      : `${this.baseUrl}/Api/reclamations`;
-    this.http.get<any[]>(url, { headers: this.getHeaders() })
-      .subscribe({ next: (d) => this.reclamations = d, error: () => {} });
-  }
+  this.activeSection = 'liste-reclamations';
+  this.rechercheDemande = '';
+  this.filtreStatut = '';
+  const url = this.idDepartementResponsable
+    ? `${this.baseUrl}/Api/reclamations/departement/${this.idDepartementResponsable}`
+    : `${this.baseUrl}/Api/reclamations`;
+  this.http.get<any[]>(url, { headers: this.getHeaders() })
+    .subscribe({ 
+      next: (d) => this.reclamations = d
+        .filter(r => r.statut !== 'SUPPRIMEE' && r.statut !== 'SUPPRIME')
+        .sort((a, b) => b.idDemande - a.idDemande), 
+      error: () => {} 
+    });
+}
 
   // ===== HELPERS UTILISATEUR =====
 
@@ -537,13 +596,19 @@ this.profilEdit = {
   }
 
   demandesFiltrees(liste: any[]): any[] {
-    if (!this.rechercheDemande.trim()) return liste;
+  let result = liste;
+  if (this.filtreStatut) {
+    result = result.filter(d => (d.statut || 'EN_ATTENTE') === this.filtreStatut);
+  }
+  if (this.rechercheDemande.trim()) {
     const s = this.rechercheDemande.trim().toLowerCase();
-    return liste.filter(d =>
+    result = result.filter(d =>
       String(d.idDemande || '').includes(s) ||
       (d.description || '').toLowerCase().includes(s)
     );
   }
+  return result;
+}
 
   // ===== MODAL TRAITEMENT =====
 
@@ -577,8 +642,7 @@ this.profilEdit = {
     ? `/Api/reclamations/${id}/statut/${idEtat}`
     : `/Api/propositions/${id}/statut/${idEtat}`;
 
-  this.http.put(`${this.baseUrl}${urlStatut}`, {}, { headers: this.getHeaders() })
-    .subscribe({
+this.http.put(`${this.baseUrl}${urlStatut}`, {}, { headers: this.getHeaders(), responseType: 'text' as 'json' })    .subscribe({
       next: () => {
         const reponse = {
           contenuReponse: this.reponseTexte,
@@ -608,9 +672,9 @@ this.profilEdit = {
           });
       },
       error: (err) => {
-        console.error('Erreur statut:', err.status, err.error);
-        this.reponseErreur = 'Erreur lors du changement de statut.';
-      }
+  console.error('Erreur statut:', err.status, err.error);
+  this.reponseErreur = `Erreur ${err.status}: ${JSON.stringify(err.error)}`;
+}
     });
 }
 
@@ -795,5 +859,110 @@ deconnecter() {
   localStorage.removeItem('role');
   localStorage.removeItem('permissions');
   window.location.href = '/login';
+}
+ngOnDestroy() {
+  if (this.pollingInterval) clearInterval(this.pollingInterval);
+}
+
+chargerNotifications() {
+  this.notifService.getAll().subscribe({
+    next: (notifs) => {
+      this.notifications = notifs;
+      this.cdr.markForCheck();
+    },
+    error: () => {}
+  });
+}
+
+// ─── polling : seuls les changements de statut sont détectés côté Angular ───
+// Les nouvelles demandes sont notifiées côté backend (Spring Boot)
+
+verifierChangementsStatut() {
+  if (!this.notifApp) return;
+  const urls = [
+    `${this.baseUrl}/Api/requetes/mes-demandes`,
+    `${this.baseUrl}/Api/reclamations/mes-demandes`,
+    `${this.baseUrl}/Api/propositions/mes-demandes`
+  ];
+  urls.forEach(url => {
+    this.http.get<any[]>(url, { headers: this.getHeaders() }).subscribe({
+      next: (demandes) => {
+        demandes.forEach(d => {
+          const key = String(d.idDemande);
+          const statutActuel = d.statut;
+          if (this.dernierStatuts[key] && this.dernierStatuts[key] !== statutActuel) {
+            // Créer la notif côté backend
+            this.http.post('http://localhost:8082/Api/notifications', {
+              emailDestinataire: this.emailUtilisateur,
+              message: `Votre demande #${key} est passée au statut : ${statutActuel}`,
+              type: 'STATUT_CHANGE'
+            }, { headers: this.getHeaders() }).subscribe({
+              next: () => this.chargerNotifications(),
+              error: () => {}
+            });
+          }
+          this.dernierStatuts[key] = statutActuel;
+        });
+      },
+      error: () => {}
+    });
+  });
+}
+
+verifierNouvellesDemandes() {
+  // Les nouvelles demandes sont notifiées par le backend (PropositionController etc.)
+  // On recharge juste les notifs pour les afficher
+  this.chargerNotifications();
+}
+
+marquerNotifLue(id: number) {
+  this.notifService.marquerLu(id).subscribe({
+    next: () => this.chargerNotifications(),
+    error: () => {}
+  });
+}
+
+supprimerNotif(id: number) {
+  this.notifService.supprimer(id).subscribe({
+    next: () => this.chargerNotifications(),
+    error: () => {}
+  });
+}
+
+trackNotif(index: number, n: any): number {
+  return n.idNotification;
+}
+
+get notifCount(): number {
+  return this.notifications.filter(n => !n.lu).length;
+}
+initialiserStatuts() {
+  const urls = [
+    `${this.baseUrl}/Api/requetes/mes-demandes`,
+    `${this.baseUrl}/Api/reclamations/mes-demandes`,
+    `${this.baseUrl}/Api/propositions/mes-demandes`
+  ];
+  urls.forEach(url => {
+    this.http.get<any[]>(url, { headers: this.getHeaders() }).subscribe({
+      next: (demandes) => {
+        demandes.forEach(d => {
+          this.dernierStatuts[String(d.idDemande)] = d.statut;
+        });
+      },
+      error: () => {}
+    });
+  });
+}
+
+demarrerPolling() {
+  
+}
+toggleNotifApp() {
+  this.http.put(
+    `${this.baseUrl}/Api/utilisateurs/me/preferences`,
+    { notifApp: this.notifApp },
+    { headers: this.getHeaders() }
+  ).subscribe({ next: () => {}, error: () => {} });
+  this.cdr.detectChanges();
 }
 }

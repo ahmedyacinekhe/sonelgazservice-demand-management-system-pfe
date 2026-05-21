@@ -36,7 +36,7 @@
               <td>{{ p.idDemande }}</td>
               <td>{{ p.description }}</td>
               <td>{{ p.typeProposition }}</td>
-              <td>{{ p.dateDemande }}</td>
+              <td>{{ p.dateDemande | date:'dd/MM/yyyy HH:mm' }}</td>
               <td><span class="badge badge-yellow">EN COURS</span></td>
               <td class="actions-cell">
                 <button class="btn-table btn-info" (click)="voirInfo(p)">Info</button>
@@ -62,7 +62,7 @@
         <p><strong>ID :</strong> {{ selectedProposition.idDemande }}</p>
         <p><strong>Description :</strong> {{ selectedProposition.description }}</p>
         <p><strong>Type :</strong> {{ selectedProposition.typeProposition }}</p>
-        <p><strong>Date :</strong> {{ selectedProposition.dateDemande }}</p>
+        <p><strong>Date :</strong> {{ selectedProposition.dateDemande | date:'dd/MM/yyyy HH:mm' }}</p>
       </div>
       <div class="modal-footer-btns">
         <button class="btn-table btn-gray" (click)="selectedProposition = null">Fermer</button>

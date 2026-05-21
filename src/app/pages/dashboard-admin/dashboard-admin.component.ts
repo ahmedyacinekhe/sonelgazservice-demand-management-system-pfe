@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -8,14 +8,23 @@ import { RequeteService } from '../../core/services/requete.service';
 import { ReclamationService } from '../../core/services/reclamation.service';
 import { PropositionService } from '../../core/services/proposition.service';
 import { HistoriqueComponent } from '../historique/historique.component';
+import { NotificationService, AppNotification } from '../../core/services/notification.service';
+
 @Component({
   selector: 'app-dashboard-admin',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, HistoriqueComponent],
+  standalone: true,                          
+  imports: [
+    CommonModule,                           
+    FormsModule,                            
+    RouterModule,
+    HistoriqueComponent,                 
+  ],
   templateUrl: './dashboard-admin.component.html',
-  styleUrl: './dashboard-admin.component.css'
+  styleUrls: ['./dashboard-admin.component.css'],
+  encapsulation: ViewEncapsulation.None
 })
-export class DashboardAdminComponent implements OnInit {
+export class DashboardAdminComponent implements OnInit, OnDestroy {
+
 
   activeSection = 'home';
   sidebarOpen = true;
@@ -31,6 +40,11 @@ export class DashboardAdminComponent implements OnInit {
   matricule             = '';
   dateEmbauche          = '';
   nomDepartement        = '';
+  notifications: AppNotification[] = [];
+notifOpen = false;
+private pollingInterval: any;
+private dernierStatuts: Record<string, string> = {};
+private idMaxDemande = 0;
   showModalPermissions  = false;
   rolePermissionsAffiche: any = null;
   permissionsRoleAffiche: any[] = [];
@@ -101,7 +115,11 @@ showMdpNouveau = false;
 showMdpConfirmer = false;
   langueSelectionnee = 'fr';
   notifEmail = true;
-  notifApp   = true;
+  get currentUserKey() {
+  const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  return 'notifApp_' + (user.id || user.email || 'default');
+}
+notifApp = true;
 
   // ✅ Métier / Département pour le formulaire demande
   metiers: any[] = [];
@@ -225,19 +243,43 @@ showMdpConfirmer = false;
 
   constructor(
     private http: HttpClient,
+    private cdr: ChangeDetectorRef,
     private authService: AuthService,
     private requeteService: RequeteService,
     private reclamationService: ReclamationService,
-    private propositionService: PropositionService
+    private propositionService: PropositionService,
+    private notifService: NotificationService
   ) {}
 
   ngOnInit() {
-    this.loadAll();
-    this.loadCurrentUser();
-    // ✅ Charger les métiers au démarrage
-    this.http.get<any[]>(`${this.baseUrl}/Api/metier`, { headers: this.getHeaders() })
-      .subscribe({ next: (data) => this.metiers = data, error: () => {} });
-  }
+  this.loadAll();
+  this.loadCurrentUser();
+  this.http.get<any>(`${this.baseUrl}/Api/utilisateurs/me/preferences`, { headers: this.getHeaders() })
+  .subscribe({
+    next: (prefs) => {
+      this.notifApp = prefs.notifApp !== false;
+      localStorage.setItem(this.currentUserKey, String(this.notifApp));
+      this.cdr.detectChanges();
+    },
+    error: () => {
+      // fallback localStorage
+      this.notifApp = localStorage.getItem(this.currentUserKey) !== 'false';
+    }
+  });
+  this.chargerNotifications();
+  this.demarrerPolling();
+  this.http.get<any>(`${this.baseUrl}/Api/utilisateurs/me/preferences`, { headers: this.getHeaders() })
+  .subscribe({
+    next: (prefs) => {
+      this.notifApp = prefs.notifApp !== false;
+      this.cdr.detectChanges();
+    },
+    error: () => {
+      this.notifApp = true;
+    }
+  });
+  
+}
 
   // ✅ Quand l'utilisateur choisit un métier → filtrer les départements
   onMetierChange(): void {
@@ -697,5 +739,79 @@ affecterRole() {
   deconnecter() {
   localStorage.clear();
   window.location.href = '/login';
+}
+ngOnDestroy() {
+  if (this.pollingInterval) clearInterval(this.pollingInterval);
+}
+
+chargerNotifications() {
+  this.notifService.getAll().subscribe({
+    next: (notifs) => this.notifications = notifs,
+    error: () => {}
+  });
+}
+
+verifierChangementsStatutAdmin() {
+  if (!this.notifApp) return;
+  const urls = [
+    `${this.baseUrl}/Api/requetes/mes-demandes`,
+    `${this.baseUrl}/Api/reclamations/mes-demandes`,
+    `${this.baseUrl}/Api/propositions/mes-demandes`
+  ];
+  urls.forEach(url => {
+    this.http.get<any[]>(url, { headers: this.getHeaders() }).subscribe({
+      next: (demandes) => {
+        demandes.forEach(d => {
+          const key = String(d.idDemande);
+          const statutActuel = d.statut;
+          if (this.dernierStatuts[key] && this.dernierStatuts[key] !== statutActuel) {
+            this.http.post(`${this.baseUrl}/Api/notifications`, {
+              emailDestinataire: this.emailUtilisateur,
+              message: `Votre demande #${key} est passée au statut : ${statutActuel}`,
+              type: 'STATUT_CHANGE'
+            }, { headers: this.getHeaders() }).subscribe({
+              next: () => this.chargerNotifications(),
+              error: () => {}
+            });
+          }
+          this.dernierStatuts[key] = statutActuel;
+        });
+      },
+      error: () => {}
+    });
+  });
+}
+
+marquerNotifLue(id: number) {
+  this.notifService.marquerLu(id).subscribe({
+    next: () => this.chargerNotifications(),
+    error: () => {}
+  });
+}
+
+supprimerNotif(id: number) {
+  this.notifService.supprimer(id).subscribe({
+    next: () => this.chargerNotifications(),
+    error: () => {}
+  });
+}
+
+trackNotif(index: number, n: any): number {
+  return n.idNotification;
+}
+
+get notifCount(): number {
+  return this.notifications.filter(n => !n.lu).length;
+}
+demarrerPolling() {
+  
+}
+toggleNotifApp() {
+  this.http.put(
+    `${this.baseUrl}/Api/utilisateurs/me/preferences`,
+    { notifApp: this.notifApp },
+    { headers: this.getHeaders() }
+  ).subscribe({ next: () => {}, error: () => {} });
+  this.cdr.detectChanges();
 }
 }

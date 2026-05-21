@@ -44,7 +44,7 @@
                     'badge-green':  r.niveauUrgence === 'FAIBLE'
                   }">{{ r.niveauUrgence }}</span>
               </td>
-              <td>{{ r.dateDemande }}</td>
+              <td>{{ r.dateDemande | date:'dd/MM/yyyy HH:mm' }}</td>
               <td><span class="badge badge-yellow">EN COURS</span></td>
               <td class="actions-cell">
                 <button class="btn-table btn-info" (click)="voirInfo(r)">Info</button>
@@ -71,7 +71,7 @@
         <p><strong>Description :</strong> {{ selectedReclamation.description }}</p>
         <p><strong>Type :</strong> {{ selectedReclamation.typeReclamation }}</p>
         <p><strong>Urgence :</strong> {{ selectedReclamation.niveauUrgence }}</p>
-        <p><strong>Date :</strong> {{ selectedReclamation.dateDemande }}</p>
+        <p><strong>Date :</strong> {{ selectedReclamation.dateDemande | date:'dd/MM/yyyy HH:mm' }}</p>
       </div>
       <div class="modal-footer-btns">
         <button class="btn-table btn-gray" (click)="selectedReclamation = null">Fermer</button>

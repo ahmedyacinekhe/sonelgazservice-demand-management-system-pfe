@@ -235,16 +235,38 @@ export class HistoriqueComponent implements OnInit {
   // ===== MODAL DÉTAIL =====
 
   voirDetail(demande: any) {
-    this.selectedDemande = demande;
-    this.messageSoumission = '';
-    this.reponseDemande = null;
-    this.modeModification = false;
-    this.modePieceJointe = false;
-    this.nouvellePJ = null;
-    this.nouvellePJNom = '';
-    this.pjError = '';
-    this.chargerReponse(demande);
-  }
+  this.selectedDemande = demande;
+  this.messageSoumission = '';
+  this.reponseDemande = null;
+  this.modeModification = false;
+  this.modePieceJointe = false;
+  this.nouvellePJ = null;
+  this.nouvellePJNom = '';
+  this.pjError = '';
+  this.chargerReponse(demande);
+
+  // Recharger les détails complets depuis l'API
+  const id = this.getDemandeId(demande);
+  const type = demande.typeDemande;
+  const segment =
+    type === 'REQUETE'     ? 'requetes' :
+    type === 'RECLAMATION' ? 'reclamations' : 'propositions';
+
+  this.http.get<any>(
+    `${this.baseUrl}/Api/${segment}/${id}`,
+    { headers: this.getHeaders() }
+  ).subscribe({
+    next: (detail) => {
+      this.selectedDemande = {
+        ...demande,
+        ...detail,
+        typeDemande: type,      // conserver le type
+        statut: demande.statut  // conserver le statut déjà chargé
+      };
+    },
+    error: () => {}
+  });
+}
 
   fermerDetail() {
     this.selectedDemande = null;
