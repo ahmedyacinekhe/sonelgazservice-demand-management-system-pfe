@@ -16,7 +16,7 @@ import com.pfe.pfe.entity.Metier;
 import com.pfe.pfe.service.MetierService;
 
 @RestController
-@RequestMapping("/Api/metier")
+@RequestMapping("/Api/metiers")
 public class MetierController {
     @Autowired
     private MetierService metierService;
