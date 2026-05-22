@@ -12,19 +12,18 @@ import { NotificationService, AppNotification } from '../../core/services/notifi
 
 @Component({
   selector: 'app-dashboard-admin',
-  standalone: true,                          
+  standalone: true,
   imports: [
-    CommonModule,                           
-    FormsModule,                            
+    CommonModule,
+    FormsModule,
     RouterModule,
-    HistoriqueComponent,                 
+    HistoriqueComponent,
   ],
   templateUrl: './dashboard-admin.component.html',
   styleUrls: ['./dashboard-admin.component.css'],
   encapsulation: ViewEncapsulation.None
 })
 export class DashboardAdminComponent implements OnInit, OnDestroy {
-
 
   activeSection = 'home';
   sidebarOpen = true;
@@ -41,41 +40,37 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
   dateEmbauche          = '';
   nomDepartement        = '';
   notifications: AppNotification[] = [];
-notifOpen = false;
-private pollingInterval: any;
-private dernierStatuts: Record<string, string> = {};
-private idMaxDemande = 0;
+  notifOpen = false;
+  private pollingInterval: any;
+  private dernierStatuts: Record<string, string> = {};
+  private idMaxDemande = 0;
   showModalPermissions  = false;
   rolePermissionsAffiche: any = null;
   permissionsRoleAffiche: any[] = [];
-  // ✅ Variable pièce jointe
-pieceJointe: File | null = null;
 
-// ✅ Quand l'utilisateur choisit un fichier
-onFichierChange(event: any) {
-  const file = event.target.files[0];
-  if (file) {
-    // Max 10 MB
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Fichier trop volumineux ! Maximum 10 MB.');
-      return;
+  pieceJointe: File | null = null;
+
+  onFichierChange(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Fichier trop volumineux ! Maximum 10 MB.');
+        return;
+      }
+      this.pieceJointe = file;
     }
-    this.pieceJointe = file;
   }
-}
 
-// ✅ Icône selon le type de fichier
-getFileIcon(): string {
-  if (!this.pieceJointe) return '📁';
-  const type = this.pieceJointe.type;
-  if (type.startsWith('image/')) return '🖼️';
-  if (type === 'application/pdf') return '📄';
-  if (type.includes('word')) return '📝';
-  if (type.includes('excel') || type.includes('spreadsheet')) return '📊';
-  return '📎';
-}
+  getFileIcon(): string {
+    if (!this.pieceJointe) return '📁';
+    const type = this.pieceJointe.type;
+    if (type.startsWith('image/')) return '🖼️';
+    if (type === 'application/pdf') return '📄';
+    if (type.includes('word')) return '📝';
+    if (type.includes('excel') || type.includes('spreadsheet')) return '📊';
+    return '📎';
+  }
 
-  // ✅ Variables modal métiers département
   showModalMetiers = false;
   departementPourMetiers: any = null;
   metiersSelectionnesDepartement: number[] = [];
@@ -111,17 +106,18 @@ getFileIcon(): string {
 
   mdp = { ancien: '', nouveau: '', confirmer: '' };
   showMdpAncien = false;
-showMdpNouveau = false;
-showMdpConfirmer = false;
+  showMdpNouveau = false;
+  showMdpConfirmer = false;
   langueSelectionnee = 'fr';
   notifEmail = true;
-  get currentUserKey() {
-  const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  return 'notifApp_' + (user.id || user.email || 'default');
-}
-notifApp = true;
 
-  // ✅ Métier / Département pour le formulaire demande
+  get currentUserKey() {
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    return 'notifApp_' + (user.id || user.email || 'default');
+  }
+
+  notifApp = true;
+
   metiers: any[] = [];
   departementsFiltre: any[] = [];
   selectedIdMetier: number | null = null;
@@ -252,40 +248,27 @@ notifApp = true;
   ) {}
 
   ngOnInit() {
-  this.loadAll();
-  this.loadCurrentUser();
-  this.http.get<any>(`${this.baseUrl}/Api/utilisateurs/me/preferences`, { headers: this.getHeaders() })
-  .subscribe({
-    next: (prefs) => {
-      this.notifApp = prefs.notifApp !== false;
-      localStorage.setItem(this.currentUserKey, String(this.notifApp));
-      this.cdr.detectChanges();
-    },
-    error: () => {
-      // fallback localStorage
-      this.notifApp = localStorage.getItem(this.currentUserKey) !== 'false';
-    }
-  });
-  this.chargerNotifications();
-  this.demarrerPolling();
-  this.http.get<any>(`${this.baseUrl}/Api/utilisateurs/me/preferences`, { headers: this.getHeaders() })
-  .subscribe({
-    next: (prefs) => {
-      this.notifApp = prefs.notifApp !== false;
-      this.cdr.detectChanges();
-    },
-    error: () => {
-      this.notifApp = true;
-    }
-  });
-  
-}
+    this.loadAll();
+    this.loadMetiers(); // ← AJOUTÉ
+    this.loadCurrentUser();
+    this.http.get<any>(`${this.baseUrl}/Api/utilisateurs/me/preferences`, { headers: this.getHeaders() })
+      .subscribe({
+        next: (prefs) => {
+          this.notifApp = prefs.notifApp !== false;
+          localStorage.setItem(this.currentUserKey, String(this.notifApp));
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.notifApp = localStorage.getItem(this.currentUserKey) !== 'false';
+        }
+      });
+    this.chargerNotifications();
+    this.demarrerPolling();
+  }
 
-  // ✅ Quand l'utilisateur choisit un métier → filtrer les départements
   onMetierChange(): void {
     this.nouvelleDemande.departement = null;
     this.departementsFiltre = [];
-
     if (this.selectedIdMetier) {
       const url = `${this.baseUrl}/Api/departements/par-metier/${this.selectedIdMetier}`;
       this.http.get<any[]>(url, { headers: this.getHeaders() })
@@ -296,13 +279,11 @@ notifApp = true;
     }
   }
 
-  // ✅ Ouvrir le modal métiers d'un département
   gererMetiersDepartement(d: any) {
     this.departementPourMetiers = d;
     this.metiersSelectionnesDepartement = [];
     this.metiersSaveError = '';
     this.metiersSaveSuccess = '';
-
     this.http.get<number[]>(
       `${this.baseUrl}/Api/departements/${d.idDepartement}/metiers`,
       { headers: this.getHeaders() }
@@ -312,30 +293,25 @@ notifApp = true;
         this.showModalMetiers = true;
       },
       error: () => {
-        // Ouvrir quand même le modal même si erreur de chargement
         this.showModalMetiers = true;
       }
     });
   }
 
-  // ✅ Vérifier si un métier est coché
   isMetierSelected(idMetier: number): boolean {
     return this.metiersSelectionnesDepartement.includes(idMetier);
   }
 
-  // ✅ Cocher / décocher un métier
   toggleMetierDepartement(idMetier: number) {
     const index = this.metiersSelectionnesDepartement.indexOf(idMetier);
     if (index === -1) this.metiersSelectionnesDepartement.push(idMetier);
     else this.metiersSelectionnesDepartement.splice(index, 1);
   }
 
-  // ✅ Sauvegarder les métiers d'un département
   sauvegarderMetiersDepartement() {
     this.metiersSaveError = '';
     this.metiersSaveSuccess = '';
     this.metiersSaving = true;
-
     this.http.post(
       `${this.baseUrl}/Api/departements/${this.departementPourMetiers.idDepartement}/metiers`,
       this.metiersSelectionnesDepartement,
@@ -410,25 +386,24 @@ notifApp = true;
   }
 
   changerMotDePasse() {
-  if (!this.mdp.ancien || !this.mdp.nouveau) { alert('Remplissez tous les champs !'); return; }
-  if (this.mdp.nouveau.length < 8) { alert('Le mot de passe doit contenir au moins 8 caractères !'); return; }
-  if (!/[A-Z]/.test(this.mdp.nouveau)) { alert('Le mot de passe doit contenir au moins une lettre majuscule !'); return; }
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(this.mdp.nouveau)) { alert('Le mot de passe doit contenir au moins un caractère spécial !'); return; }
-  if (this.mdp.nouveau !== this.mdp.confirmer) { alert('Les mots de passe ne correspondent pas !'); return; }
-
-  this.http.put(`${this.baseUrl}/Api/employes/me/mot-de-passe`,
-    { ancien: this.mdp.ancien, nouveau: this.mdp.nouveau },
-    { headers: this.getHeaders(), responseType: 'text' }
-  ).subscribe({
-    next: () => {
-      alert('Mot de passe modifié avec succès !');
-      this.mdp = { ancien: '', nouveau: '', confirmer: '' };
-    },
-    error: (err) => {
-      alert(err.status === 400 ? 'Ancien mot de passe incorrect !' : 'Erreur lors du changement.');
-    }
-  });
-}
+    if (!this.mdp.ancien || !this.mdp.nouveau) { alert('Remplissez tous les champs !'); return; }
+    if (this.mdp.nouveau.length < 8) { alert('Le mot de passe doit contenir au moins 8 caractères !'); return; }
+    if (!/[A-Z]/.test(this.mdp.nouveau)) { alert('Le mot de passe doit contenir au moins une lettre majuscule !'); return; }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(this.mdp.nouveau)) { alert('Le mot de passe doit contenir au moins un caractère spécial !'); return; }
+    if (this.mdp.nouveau !== this.mdp.confirmer) { alert('Les mots de passe ne correspondent pas !'); return; }
+    this.http.put(`${this.baseUrl}/Api/employes/me/mot-de-passe`,
+      { ancien: this.mdp.ancien, nouveau: this.mdp.nouveau },
+      { headers: this.getHeaders(), responseType: 'text' }
+    ).subscribe({
+      next: () => {
+        alert('Mot de passe modifié avec succès !');
+        this.mdp = { ancien: '', nouveau: '', confirmer: '' };
+      },
+      error: (err) => {
+        alert(err.status === 400 ? 'Ancien mot de passe incorrect !' : 'Erreur lors du changement.');
+      }
+    });
+  }
 
   changerLangue() {
     const noms: Record<string, string> = { fr: 'Français', ar: 'Arabe', en: 'Anglais' };
@@ -451,63 +426,59 @@ notifApp = true;
     };
   }
 
-soumettredemande() {
-  this.demandeError = '';
-  this.demandeSuccess = '';
-  const d = this.nouvelleDemande;
+  soumettredemande() {
+    this.demandeError = '';
+    this.demandeSuccess = '';
+    const d = this.nouvelleDemande;
 
-  if (!d.description?.trim()) { this.demandeError = 'La description est obligatoire.'; return; }
-  if (!d.departement) { this.demandeError = 'Veuillez choisir un métier et un département.'; return; }
-  if (this.demandeTypeSelectionne === 'REQUETE' && !d.typeRequete) {
-    this.demandeError = 'Veuillez choisir un type de requête.'; return;
-  }
-  if (this.demandeTypeSelectionne === 'RECLAMATION' && (!d.typeReclamation || !d.niveauUrgence)) {
-    this.demandeError = 'Veuillez choisir le type de réclamation et le niveau d\'urgence.'; return;
-  }
-  if (this.demandeTypeSelectionne === 'PROPOSITION' && !d.typeProposition) {
-    this.demandeError = 'Veuillez choisir un type de proposition.'; return;
-  }
+    if (!d.description?.trim()) { this.demandeError = 'La description est obligatoire.'; return; }
+    if (!d.departement) { this.demandeError = 'Veuillez choisir un métier et un département.'; return; }
+    if (this.demandeTypeSelectionne === 'REQUETE' && !d.typeRequete) {
+      this.demandeError = 'Veuillez choisir un type de requête.'; return;
+    }
+    if (this.demandeTypeSelectionne === 'RECLAMATION' && (!d.typeReclamation || !d.niveauUrgence)) {
+      this.demandeError = 'Veuillez choisir le type de réclamation et le niveau d\'urgence.'; return;
+    }
+    if (this.demandeTypeSelectionne === 'PROPOSITION' && !d.typeProposition) {
+      this.demandeError = 'Veuillez choisir un type de proposition.'; return;
+    }
 
-  this.demandeSubmitting = true;
+    this.demandeSubmitting = true;
 
-  const onDone = () => {
-    this.demandeSubmitting = false;
-    this.pieceJointe = null;
-    this.selectedIdMetier = null;
-    this.departementsFiltre = [];
-    this.nouvelleDemande = {
-      description: '', typeRequete: '', typeReclamation: '',
-      niveauUrgence: '', typeProposition: '', departement: null
+    const onDone = () => {
+      this.demandeSubmitting = false;
+      this.pieceJointe = null;
+      this.selectedIdMetier = null;
+      this.departementsFiltre = [];
+      this.nouvelleDemande = {
+        description: '', typeRequete: '', typeReclamation: '',
+        niveauUrgence: '', typeProposition: '', departement: null
+      };
+      this.demandeSuccess = '✅ Votre demande a été enregistrée en brouillon.\n📝 Vous pouvez la modifier à tout moment depuis l\'Historique.\n⚠️ Elle ne sera pas traitée tant qu\'elle n\'est pas confirmée.';
     };
-    // ✅ NE PAS remettre demandeTypeSelectionne = '' ici
-    this.demandeSuccess = '✅ Votre demande a été enregistrée en brouillon.\n📝 Vous pouvez la modifier à tout moment depuis l\'Historique.\n⚠️ Elle ne sera pas traitée tant qu\'elle n\'est pas confirmée.';
-  };
 
-  const onErr = () => {
-    this.demandeError = 'Erreur lors de la soumission. Réessayez.';
-    this.demandeSubmitting = false;
-  };
+    const onErr = () => {
+      this.demandeError = 'Erreur lors de la soumission. Réessayez.';
+      this.demandeSubmitting = false;
+    };
 
-  if (this.demandeTypeSelectionne === 'REQUETE') {
-    this.requeteService.save({
-      description: d.description, typeRequete: d.typeRequete, departement: d.departement
-    }, this.pieceJointe ?? undefined).subscribe({ next: onDone, error: onErr });
-
-  } else if (this.demandeTypeSelectionne === 'RECLAMATION') {
-    this.reclamationService.save({
-      description: d.description, typeReclamation: d.typeReclamation,
-      niveauUrgence: d.niveauUrgence, departement: d.departement
-    }, this.pieceJointe ?? undefined).subscribe({ next: onDone, error: onErr });
-
-  } else if (this.demandeTypeSelectionne === 'PROPOSITION') {
-    this.propositionService.save({
-      description: d.description, typeProposition: d.typeProposition, departement: d.departement
-    }, this.pieceJointe ?? undefined).subscribe({ next: onDone, error: onErr });
-
-  } else {
-    this.demandeSubmitting = false;
+    if (this.demandeTypeSelectionne === 'REQUETE') {
+      this.requeteService.save({
+        description: d.description, typeRequete: d.typeRequete, departement: d.departement
+      }, this.pieceJointe ?? undefined).subscribe({ next: onDone, error: onErr });
+    } else if (this.demandeTypeSelectionne === 'RECLAMATION') {
+      this.reclamationService.save({
+        description: d.description, typeReclamation: d.typeReclamation,
+        niveauUrgence: d.niveauUrgence, departement: d.departement
+      }, this.pieceJointe ?? undefined).subscribe({ next: onDone, error: onErr });
+    } else if (this.demandeTypeSelectionne === 'PROPOSITION') {
+      this.propositionService.save({
+        description: d.description, typeProposition: d.typeProposition, departement: d.departement
+      }, this.pieceJointe ?? undefined).subscribe({ next: onDone, error: onErr });
+    } else {
+      this.demandeSubmitting = false;
+    }
   }
-}
 
   annulerDemandeForm() {
     this.demandeTypeSelectionne = '';
@@ -527,6 +498,7 @@ soumettredemande() {
     this.loadRoles();
     this.loadPermissions();
     this.loadRolesUtilisateurs();
+    this.loadMetiers(); // ← AJOUTÉ
   }
 
   loadUtilisateurs() {
@@ -555,6 +527,15 @@ soumettredemande() {
   loadRolesUtilisateurs() {
     this.http.get<any[]>(`${this.baseUrl}/Api/rolesUtilisateurs`, { headers: this.getHeaders() })
       .subscribe({ next: (d) => this.rolesUtilisateurs = d, error: () => {} });
+  }
+
+  // ← AJOUTÉ
+  loadMetiers() {
+    this.http.get<any[]>(`${this.baseUrl}/Api/metiers`, { headers: this.getHeaders() })
+      .subscribe({
+        next: (data) => this.metiers = data,
+        error: () => {}
+      });
   }
 
   getRoleUtilisateur(idUtil: number): string {
@@ -639,43 +620,38 @@ soumettredemande() {
       { headers: this.getHeaders() })
       .subscribe({ next: () => this.loadUtilisateurs(), error: (err) => alert('Erreur: ' + err.status) });
   }
-affecterRole() {
-  if (!this.affectation.idUtil || !this.affectation.idRole) {
-    alert('Choisissez utilisateur et rôle !'); return;
-  }
 
-  const roleSelectionne = this.roles.find(r => Number(r.idRole) === Number(this.affectation.idRole));
-  const nomRole = roleSelectionne ? roleSelectionne.nomRole : '';
-  const necessiteDepartement = nomRole.toUpperCase() === 'EMPLOYE' || 
-                               nomRole.toUpperCase() === 'RESPONSABLE';
-
-  if (necessiteDepartement && !this.affectation.idDepartement) {
-    alert('Veuillez choisir un département pour ce rôle !'); return;
-  }
-
-  const { idUtil, idRole, idDepartement } = this.affectation;
-
-  // ✅ UN SEUL appel qui fait tout : vérification + affectation + conversion
-  this.http.post(
-    `${this.baseUrl}/Api/utilisateurs/${idUtil}/affecter-role?idRole=${idRole}&idDepartement=${idDepartement}`,
-    {},
-    { headers: this.getHeaders(), responseType: 'text' as 'json' }
-  ).subscribe({
-    next: () => {
-      this.loadAll();
-      if (this.departementSelectionne) {
-        setTimeout(() => this.voirEmployesDepartement(this.departementSelectionne), 500);
-      }
-      alert('Rôle affecté avec succès !');
-      this.affectation = { idUtil: 0, idRole: 0, idDepartement: 0 };
-      this.rechercheAffectation = '';
-    },
-    error: (err) => {
-      alert('⚠️ ' + (err.error || 'Erreur lors de l\'affectation du rôle.'));
+  affecterRole() {
+    if (!this.affectation.idUtil || !this.affectation.idRole) {
+      alert('Choisissez utilisateur et rôle !'); return;
     }
-  });
-}
- 
+    const roleSelectionne = this.roles.find(r => Number(r.idRole) === Number(this.affectation.idRole));
+    const nomRole = roleSelectionne ? roleSelectionne.nomRole : '';
+    const necessiteDepartement = nomRole.toUpperCase() === 'EMPLOYE' ||
+                                 nomRole.toUpperCase() === 'RESPONSABLE';
+    if (necessiteDepartement && !this.affectation.idDepartement) {
+      alert('Veuillez choisir un département pour ce rôle !'); return;
+    }
+    const { idUtil, idRole, idDepartement } = this.affectation;
+    this.http.post(
+      `${this.baseUrl}/Api/utilisateurs/${idUtil}/affecter-role?idRole=${idRole}&idDepartement=${idDepartement}`,
+      {},
+      { headers: this.getHeaders(), responseType: 'text' as 'json' }
+    ).subscribe({
+      next: () => {
+        this.loadAll();
+        if (this.departementSelectionne) {
+          setTimeout(() => this.voirEmployesDepartement(this.departementSelectionne), 500);
+        }
+        alert('Rôle affecté avec succès !');
+        this.affectation = { idUtil: 0, idRole: 0, idDepartement: 0 };
+        this.rechercheAffectation = '';
+      },
+      error: (err) => {
+        alert('⚠️ ' + (err.error || 'Erreur lors de l\'affectation du rôle.'));
+      }
+    });
+  }
 
   saveDepartement() {
     if (!this.nouveauDepartement.nomDepartement) { alert('Nom requis !'); return; }
@@ -736,82 +712,84 @@ affecterRole() {
         .subscribe({ next: () => this.loadRoles(), error: () => {} });
     }
   }
+
   deconnecter() {
-  localStorage.clear();
-  window.location.href = '/login';
-}
-ngOnDestroy() {
-  if (this.pollingInterval) clearInterval(this.pollingInterval);
-}
+    localStorage.clear();
+    window.location.href = '/login';
+  }
 
-chargerNotifications() {
-  this.notifService.getAll().subscribe({
-    next: (notifs) => this.notifications = notifs,
-    error: () => {}
-  });
-}
+  ngOnDestroy() {
+    if (this.pollingInterval) clearInterval(this.pollingInterval);
+  }
 
-verifierChangementsStatutAdmin() {
-  if (!this.notifApp) return;
-  const urls = [
-    `${this.baseUrl}/Api/requetes/mes-demandes`,
-    `${this.baseUrl}/Api/reclamations/mes-demandes`,
-    `${this.baseUrl}/Api/propositions/mes-demandes`
-  ];
-  urls.forEach(url => {
-    this.http.get<any[]>(url, { headers: this.getHeaders() }).subscribe({
-      next: (demandes) => {
-        demandes.forEach(d => {
-          const key = String(d.idDemande);
-          const statutActuel = d.statut;
-          if (this.dernierStatuts[key] && this.dernierStatuts[key] !== statutActuel) {
-            this.http.post(`${this.baseUrl}/Api/notifications`, {
-              emailDestinataire: this.emailUtilisateur,
-              message: `Votre demande #${key} est passée au statut : ${statutActuel}`,
-              type: 'STATUT_CHANGE'
-            }, { headers: this.getHeaders() }).subscribe({
-              next: () => this.chargerNotifications(),
-              error: () => {}
-            });
-          }
-          this.dernierStatuts[key] = statutActuel;
-        });
-      },
+  chargerNotifications() {
+    this.notifService.getAll().subscribe({
+      next: (notifs) => this.notifications = notifs,
       error: () => {}
     });
-  });
-}
+  }
 
-marquerNotifLue(id: number) {
-  this.notifService.marquerLu(id).subscribe({
-    next: () => this.chargerNotifications(),
-    error: () => {}
-  });
-}
+  verifierChangementsStatutAdmin() {
+    if (!this.notifApp) return;
+    const urls = [
+      `${this.baseUrl}/Api/requetes/mes-demandes`,
+      `${this.baseUrl}/Api/reclamations/mes-demandes`,
+      `${this.baseUrl}/Api/propositions/mes-demandes`
+    ];
+    urls.forEach(url => {
+      this.http.get<any[]>(url, { headers: this.getHeaders() }).subscribe({
+        next: (demandes) => {
+          demandes.forEach(d => {
+            const key = String(d.idDemande);
+            const statutActuel = d.statut;
+            if (this.dernierStatuts[key] && this.dernierStatuts[key] !== statutActuel) {
+              this.http.post(`${this.baseUrl}/Api/notifications`, {
+                emailDestinataire: this.emailUtilisateur,
+                message: `Votre demande #${key} est passée au statut : ${statutActuel}`,
+                type: 'STATUT_CHANGE'
+              }, { headers: this.getHeaders() }).subscribe({
+                next: () => this.chargerNotifications(),
+                error: () => {}
+              });
+            }
+            this.dernierStatuts[key] = statutActuel;
+          });
+        },
+        error: () => {}
+      });
+    });
+  }
 
-supprimerNotif(id: number) {
-  this.notifService.supprimer(id).subscribe({
-    next: () => this.chargerNotifications(),
-    error: () => {}
-  });
-}
+  marquerNotifLue(id: number) {
+    this.notifService.marquerLu(id).subscribe({
+      next: () => this.chargerNotifications(),
+      error: () => {}
+    });
+  }
 
-trackNotif(index: number, n: any): number {
-  return n.idNotification;
-}
+  supprimerNotif(id: number) {
+    this.notifService.supprimer(id).subscribe({
+      next: () => this.chargerNotifications(),
+      error: () => {}
+    });
+  }
 
-get notifCount(): number {
-  return this.notifications.filter(n => !n.lu).length;
-}
-demarrerPolling() {
-  
-}
-toggleNotifApp() {
-  this.http.put(
-    `${this.baseUrl}/Api/utilisateurs/me/preferences`,
-    { notifApp: this.notifApp },
-    { headers: this.getHeaders() }
-  ).subscribe({ next: () => {}, error: () => {} });
-  this.cdr.detectChanges();
-}
+  trackNotif(index: number, n: any): number {
+    return n.idNotification;
+  }
+
+  get notifCount(): number {
+    return this.notifications.filter(n => !n.lu).length;
+  }
+
+  demarrerPolling() {}
+
+  toggleNotifApp() {
+    this.http.put(
+      `${this.baseUrl}/Api/utilisateurs/me/preferences`,
+      { notifApp: this.notifApp },
+      { headers: this.getHeaders() }
+    ).subscribe({ next: () => {}, error: () => {} });
+    this.cdr.detectChanges();
+  }
 }
