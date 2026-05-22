@@ -373,21 +373,22 @@
           <p class="page-subtitle">Consultez et traitez les demandes en cours</p>
         </div>
         <div class="home-cards home-cards-activity">
-          <div class="home-card gestion-demande-link" (click)="ouvrirListePropositions()">
-            <div class="home-card-icon"><img src="assets/demandes.svg" alt=""/></div>
-            <div class="home-card-label">Propositions en cours</div>
-            <div class="home-card-count">Ouvrir la liste →</div>
-          </div>
-          <div class="home-card gestion-demande-link" (click)="ouvrirListeRequetes()">
-            <div class="home-card-icon"><img src="assets/demandes.svg" alt=""/></div>
-            <div class="home-card-label">Requêtes en cours</div>
-            <div class="home-card-count">Ouvrir la liste →</div>
-          </div>
-          <div class="home-card gestion-demande-link" (click)="ouvrirListeReclamations()">
-            <div class="home-card-icon"><img src="assets/demandes.svg" alt=""/></div>
-            <div class="home-card-label">Réclamations en cours</div>
-            <div class="home-card-count">Ouvrir la liste →</div>
-          </div>
+          
+<div class="home-card gestion-demande-link" (click)="ouvrirListePropositions()">
+  <div class="home-card-icon" style="font-size:2.4rem; display:flex; align-items:center; justify-content:center;">📋</div>
+  <div class="home-card-label">Propositions en cours</div>
+  <div class="home-card-count">Ouvrir la liste →</div>
+</div>
+<div class="home-card gestion-demande-link" (click)="ouvrirListeRequetes()">
+  <div class="home-card-icon" style="font-size:2.4rem; display:flex; align-items:center; justify-content:center;">📝</div>
+  <div class="home-card-label">Requêtes en cours</div>
+  <div class="home-card-count">Ouvrir la liste →</div>
+</div>
+<div class="home-card gestion-demande-link" (click)="ouvrirListeReclamations()">
+  <div class="home-card-icon" style="font-size:2.4rem; display:flex; align-items:center; justify-content:center;">📢</div>
+  <div class="home-card-label">Réclamations en cours</div>
+  <div class="home-card-count">Ouvrir la liste →</div>
+</div>
         </div>
       </div>
 
