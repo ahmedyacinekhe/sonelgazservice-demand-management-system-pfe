@@ -131,6 +131,7 @@ private notifService: NotificationService
 
   ngOnInit() {
     this.refreshAccessFlags();
+    this.loadMetiers();
     this.normalizeActiveSection();
     if (this.showAdministrationBlock) {
       this.loadAll();
@@ -401,7 +402,13 @@ this.profilEdit = {
         .subscribe({ next: (d) => this.departementsFiltre = d, error: () => {} });
     }
   }
-
+  loadMetiers() {
+  this.http.get<any[]>(`${this.baseUrl}/Api/metiers`, { headers: this.getHeaders() })
+    .subscribe({
+      next: (data) => this.metiers = data,
+      error: () => {}
+    });
+}
   onFichierChange(event: any) {
     const file = event.target.files[0];
     if (file) {
