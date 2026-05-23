@@ -1,6 +1,6 @@
 package com.pfe.pfe.entity;
 
-import java.sql.Date;
+import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -21,7 +21,7 @@ public class Reponse {
 private int idReponse;
 
     @Column(name = "date_reponse")
-    private Date dateReponse;
+    private LocalDateTime dateReponse;
 
     @Column(name = "contenu_reponse")
     private String contenuReponse;

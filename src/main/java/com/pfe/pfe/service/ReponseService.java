@@ -18,7 +18,7 @@ public class ReponseService {
 
     public Reponse save(Reponse reponse) {
         if (reponse.getDateReponse() == null) {
-            reponse.setDateReponse(new java.sql.Date(System.currentTimeMillis()));
+            reponse.setDateReponse(java.time.LocalDateTime.now());
         }
         return reponseRepository.save(reponse);
     }
